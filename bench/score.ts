@@ -9,7 +9,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { diagnoseHeuristic } from "../packages/capture/src/heuristic.js";
-import { judgeTrajectory } from "../packages/capture/src/judge.js";
+import { judgeTrajectory, buildJudgePrompt, estimateCost } from "../packages/capture/src/judge.js";
+
+// Hard spend cap (USD). Each judge call is pre-estimated; we stop before exceeding it.
+const MAX_USD = Number(process.env.OT_MAX_USD || "3");
+const OUT_TOK_USD = (120 / 1000) * 0.0003; // small JSON verdict, repo-conservative rate
+let spentEstUSD = 0;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gold = JSON.parse(readFileSync(join(here, "gold/gold.json"), "utf8")) as any[];
@@ -44,13 +49,21 @@ async function main() {
   if (runJudge) {
     judge = [];
     for (const t of gold) {
+      const estUSD = estimateCost(buildJudgePrompt(t)).usd + OUT_TOK_USD;
+      if (spentEstUSD + estUSD > MAX_USD) {
+        console.error(`[budget] stopping before ${t.trajectory_id}: would exceed $${MAX_USD} cap (spent ~$${spentEstUSD.toFixed(4)})`);
+        judge.push({ id: t.trajectory_id, gold: t.metadata.ground_truth.diagnosis, pred: "SKIPPED_BUDGET", rationale: "" });
+        continue;
+      }
       try {
         const v = await judgeTrajectory(t, { apiKey: process.env.GEMINI_API_KEY });
+        spentEstUSD += estUSD;
         judge.push({ id: t.trajectory_id, gold: t.metadata.ground_truth.diagnosis, pred: String(v.diagnosis), rationale: t.metadata.ground_truth.rationale });
       } catch (e) {
         judge.push({ id: t.trajectory_id, gold: t.metadata.ground_truth.diagnosis, pred: "ERROR", rationale: "" });
       }
     }
+    console.error(`[budget] estimated spend this run: ~$${spentEstUSD.toFixed(4)} of $${MAX_USD} cap`);
     jm = metrics(judge);
   }
 
