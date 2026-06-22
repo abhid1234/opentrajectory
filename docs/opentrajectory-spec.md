@@ -140,7 +140,7 @@ Three things enforce exactly this, kept in lockstep by a cross-check test:
 
 ## Appendix A — OpenTelemetry GenAI mapping (compatibility, not competition)
 
-OpenTrajectory is designed to coexist with OTel GenAI semantic conventions. A capturer MAY emit both. Suggested mapping:
+OpenTrajectory is designed to coexist with OTel GenAI semantic conventions. **This mapping is shipped** — `ot to-otel <file.ot.json>` (and `toOtel()` in the SDK) converts any trajectory to an OTLP/JSON trace export you can send to any OpenTelemetry collector (Honeycomb, Grafana Tempo, Jaeger). Mapping:
 
 | OpenTrajectory | OTel GenAI |
 |---|---|
@@ -153,7 +153,7 @@ OpenTrajectory is designed to coexist with OTel GenAI semantic conventions. A ca
 | `outcome.status=failure` | span status `ERROR` |
 | `outcome.verdict` | **no OTel equivalent** — OpenTrajectory's eval-first addition |
 
-The `verdict` row is the point: OTel describes *what happened* for monitoring; OpenTrajectory adds *why it succeeded/failed* for evaluation, in a portable file. That is the wedge.
+The `verdict` row is the point: OTel describes *what happened* for monitoring; OpenTrajectory adds *why it succeeded/failed* for evaluation, in a portable file. `ot to-otel` carries it through as an `opentrajectory.verdict.*` span attribute — so an OTel backend keeps the eval signal even though the core conventions have no field for it. That is the wedge: complementary to observability, not competing with it.
 
 ## Appendix B — example
 

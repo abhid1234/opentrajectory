@@ -4,6 +4,7 @@
 //   ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 //   ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 //   ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages (Inspector input)
+//   ot to-otel <file.ot.json> [-o out.json]                     convert to OpenTelemetry GenAI spans (OTLP/JSON)
 //   ot diagnose <file.ot.json>                                  offline heuristic diagnosis (no API key)
 //   ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge (Gemini)
 //   ot hook                                                      live PostToolUse hook (reads stdin)
@@ -15,6 +16,7 @@ import { toMessages } from "./to-messages.js";
 import { runHook } from "./hook.js";
 import { judgeAndFill, buildJudgePrompt, estimateCost } from "./judge.js";
 import { diagnoseHeuristic } from "./heuristic.js";
+import { toOtel } from "./to-otel.js";
 function arg(flags, argv) {
     for (const f of flags) {
         const i = argv.indexOf(f);
@@ -92,6 +94,19 @@ function main() {
             process.stdout.write(json + "\n");
         return;
     }
+    if (cmd === "to-otel") {
+        const input = rest.find((a) => !a.startsWith("-"));
+        if (!input)
+            return fail("usage: ot to-otel <file.ot.json> [-o out.json]   (OTLP/JSON for any OTel collector)");
+        const out = arg(["-o", "--out"], rest);
+        const traces = loadDocs(input).map((d) => toOtel(d));
+        const json = JSON.stringify(traces.length === 1 ? traces[0] : traces, null, 2);
+        if (out)
+            writeFileSync(out, json);
+        else
+            process.stdout.write(json + "\n");
+        return;
+    }
     if (cmd === "diagnose") {
         const input = rest.find((a) => !a.startsWith("-"));
         if (!input)
@@ -133,6 +148,7 @@ function main() {
         "  ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]\n" +
         "  ot validate <file.ot.json|.ot.jsonl>\n" +
         "  ot to-messages <file.ot.json> [-o out.json]\n" +
+        "  ot to-otel <file.ot.json> [-o out.json]   (OpenTelemetry GenAI spans)\n" +
         "  ot diagnose <file.ot.json>   (offline heuristic, no key)\n" +
         "  ot judge <file.ot.json> [-o out] [--model M] [--dry-run]\n" +
         "  ot hook   (live PostToolUse hook; reads stdin)");

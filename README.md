@@ -12,6 +12,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 |---|---|---|
 | **Format spec** (v0.1) + **machine-readable JSON Schema** | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) · [`schema/`](schema/opentrajectory-0.1.schema.json) | ✅ |
 | **CI validation** (zero-dep validator + reusable GitHub Action) | [`tools/ot-validate.mjs`](tools/ot-validate.mjs) · [`action.yml`](action.yml) | ✅ |
+| **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 47 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
@@ -62,6 +63,18 @@ jobs:
         with: { path: traces/ }
 ```
 
+**Already on OpenTelemetry?** Pipe trajectories straight into your existing stack — no new backend:
+
+```bash
+ot to-otel run.ot.json | curl -X POST -H "Content-Type: application/json" -d @- \
+  http://localhost:4318/v1/traces     # any OTLP/HTTP collector (Honeycomb, Grafana Tempo, Jaeger)
+```
+
+Each run becomes a trace: a root `invoke_agent` span + an `execute_tool` span per tool call
+(`gen_ai.tool.name`, status `ERROR` on failure). OpenTrajectory's eval-first `verdict` rides
+along as an `opentrajectory.verdict.*` attribute that core OTel has no field for — **complementary
+to observability, not competing with it.**
+
 **Machine-readable schema** — point your editor or tooling at
 [`schema/opentrajectory-0.1.schema.json`](schema/opentrajectory-0.1.schema.json)
 (JSON Schema draft 2020-12) for autocomplete and validation. The zero-dep `ot validate`
@@ -75,6 +88,7 @@ published schema never drift. This repo dogfoods both on every push
 ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages
+ot to-otel <file.ot.json> [-o out.json]                     convert to OpenTelemetry GenAI spans (OTLP/JSON)
 ot diagnose <file.ot.json>                                  offline heuristic diagnosis (no API key)
 ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge
 ot hook                                                      live PostToolUse hook (reads stdin)

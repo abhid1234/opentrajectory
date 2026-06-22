@@ -10,6 +10,7 @@ import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
 import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
 import { diagnoseHeuristic } from "../src/heuristic.js";
+import { toOtel } from "../src/to-otel.js";
 import type { Trajectory } from "../src/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -201,6 +202,27 @@ const flakyTransport = async (...a: [string, Record<string, string>, unknown]) =
 };
 const retried = await judgeTrajectory(traj, { transport: flakyTransport, backoffBase: 0, maxRetries: 3 });
 ok("judge retries a transient failure", retried.diagnosis === "HARNESS" && calls === 2);
+
+// --- 7b. OTel GenAI bridge --------------------------------------------------
+console.log("to-otel");
+const otel = toOtel(traj) as any;
+const rs = otel.resourceSpans?.[0];
+const spans = rs?.scopeSpans?.[0]?.spans || [];
+const attrMap = (a: any[]) => Object.fromEntries((a || []).map((x) => [x.key, x.value.stringValue ?? x.value.intValue ?? x.value.boolValue]));
+ok("emits OTLP resourceSpans/scopeSpans", Array.isArray(otel.resourceSpans) && spans.length > 0);
+ok("has a root invoke_agent span", spans.some((s: any) => s.name.startsWith("invoke_agent")));
+const toolSpan = spans.find((s: any) => s.name.startsWith("execute_tool"));
+ok("tool step -> execute_tool span", !!toolSpan);
+ok("tool span has gen_ai.tool.name", attrMap(toolSpan?.attributes)["gen_ai.tool.name"] === "Bash");
+ok("failed tool -> span status ERROR (2)", toolSpan?.status?.code === 2);
+ok("failure trajectory -> root span ERROR", spans[0].status.code === 2);
+ok("all spans share one traceId", new Set(spans.map((s: any) => s.traceId)).size === 1);
+ok("tool span parents the root span", toolSpan?.parentSpanId === spans[0].spanId);
+ok("deterministic ids (same in/out)", (toOtel(traj) as any).resourceSpans[0].scopeSpans[0].spans[0].spanId === spans[0].spanId);
+// verdict carried as a vendor attribute (no OTel equivalent — the eval-first wedge)
+const judgedOtel = toOtel({ ...traj, outcome: { status: "failure", verdict: { diagnosis: "HARNESS", category: "Context Gap", confidence: 0.9 } } } as any) as any;
+const rootAttrs = attrMap(judgedOtel.resourceSpans[0].scopeSpans[0].spans[0].attributes);
+ok("verdict.diagnosis -> opentrajectory.verdict.diagnosis attr", rootAttrs["opentrajectory.verdict.diagnosis"] === "HARNESS");
 
 // --- 8. standard surface: schema + standalone CI validator agree ------------
 console.log("standard");
