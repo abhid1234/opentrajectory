@@ -4,12 +4,14 @@
 //   ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]   post-hoc capture from a Claude Code transcript
 //   ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 //   ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages (Inspector input)
+//   ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge (Gemini)
 //   ot hook                                                      live PostToolUse hook (reads stdin)
 import { readFileSync, writeFileSync } from "node:fs";
 import { captureFromTranscript } from "./from-claude-code.js";
 import { validate } from "./validate.js";
 import { toMessages } from "./to-messages.js";
 import { runHook } from "./hook.js";
+import { judgeAndFill, buildJudgePrompt, estimateCost } from "./judge.js";
 function arg(flags, argv) {
     for (const f of flags) {
         const i = argv.indexOf(f);
@@ -81,10 +83,37 @@ function main() {
             process.stdout.write(json + "\n");
         return;
     }
+    if (cmd === "judge") {
+        const input = rest.find((a) => !a.startsWith("-"));
+        if (!input)
+            return fail("usage: ot judge <file.ot.json> [-o out] [--model M] [--dry-run]");
+        const traj = JSON.parse(readFileSync(input, "utf8"));
+        const model = arg(["--model"], rest);
+        if (rest.includes("--dry-run")) {
+            const prompt = buildJudgePrompt(traj);
+            const c = estimateCost(prompt);
+            console.error(`[dry-run] ~${c.tokens} input tokens · ~$${c.usd.toFixed(5)} (no API call)\n`);
+            process.stdout.write(prompt + "\n");
+            return;
+        }
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey)
+            return fail("GEMINI_API_KEY is not set (use --dry-run to preview the prompt without calling the API)");
+        judgeAndFill(traj, { apiKey, model })
+            .then((judged) => {
+            const out = arg(["-o", "--out"], rest) || input; // write back in place by default
+            writeFileSync(out, JSON.stringify(judged, null, 2));
+            const v = judged.outcome.verdict;
+            console.error(`verdict: ${v.diagnosis} (${v.category}) · conf ${v.confidence} · step ${v.offending_step_index ?? "—"} -> ${out}`);
+        })
+            .catch((e) => fail(String(e?.message || e)));
+        return;
+    }
     fail("OpenTrajectory capture CLI\n" +
         "  ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]\n" +
         "  ot validate <file.ot.json|.ot.jsonl>\n" +
         "  ot to-messages <file.ot.json> [-o out.json]\n" +
+        "  ot judge <file.ot.json> [-o out] [--model M] [--dry-run]\n" +
         "  ot hook   (live PostToolUse hook; reads stdin)");
 }
 function fail(msg) {

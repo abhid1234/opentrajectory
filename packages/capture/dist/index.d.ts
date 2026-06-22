@@ -6,3 +6,5 @@ export { toMessages } from "./to-messages.js";
 export type { MessagesRecord, OpenAIMessage } from "./to-messages.js";
 export { stepFromPayload, appendStep, sidecarPath, runHook } from "./hook.js";
 export type { PostToolUsePayload } from "./hook.js";
+export { judgeTrajectory, judgeAndFill, buildJudgePrompt, parseVerdict, estimateCost, JUDGE_SCHEMA, DEFAULT_MODEL, JudgeError, } from "./judge.js";
+export type { JudgeOptions, Transport } from "./judge.js";

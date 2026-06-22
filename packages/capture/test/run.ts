@@ -7,6 +7,8 @@ import { validate } from "../src/validate.js";
 import { captureFromTranscript, fromClaudeCode } from "../src/from-claude-code.js";
 import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
+import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
+import type { Trajectory } from "../src/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 let passed = 0;
@@ -117,6 +119,40 @@ ok("hook builds a tool_call step", hookStep.tool_call?.name === "Read");
 ok("hook infers success", hookStep.tool_call?.success === true);
 const hookFail = stepFromPayload({ tool_name: "Bash", tool_input: {}, tool_response: { content: "boom", is_error: true } });
 ok("hook infers failure", hookFail.tool_call?.success === false);
+
+// --- 7. judge: prompt, parse, full run via injected transport ---------------
+console.log("judge");
+ok("prompt embeds the 4-point taxonomy", buildJudgePrompt(traj).includes("HARNESS (broken environment)"));
+ok("prompt renders a tool step with success flag", /tool:Bash.*\[ERR\]/.test(buildJudgePrompt(traj)));
+ok("prompt includes the task", buildJudgePrompt(traj).includes("Fix the bug"));
+
+const v1 = parseVerdict({ diagnosis: "harness", failure_category: "Context Gap", confidence: 0.9, reasoning: "missing dep", offending_step_index: 2 });
+ok("parse normalizes diagnosis to upper", v1.diagnosis === "HARNESS");
+ok("parse keeps human category", v1.category === "Context Gap");
+ok("parse coerces offending index to int", v1.offending_step_index === 2);
+ok("parse stamps evaluator", (v1.evaluator || "").startsWith("opentrajectory/judge"));
+ok("parse defaults bad diagnosis to CLEAN", parseVerdict({ diagnosis: "nonsense", confidence: "x" }).diagnosis === "CLEAN");
+
+// Injected transport: no network, no key. Mimics the Gemini response envelope.
+const fakeTransport = async (_url: string, _headers: Record<string, string>, _body: unknown) => ({
+  candidates: [{ content: { parts: [{ text: JSON.stringify({ diagnosis: "HARNESS", failure_category: "Context Gap", confidence: 0.92, reasoning: "env withheld the jwt module", offending_step_index: 2 }) }] } }],
+});
+const verdict = await judgeTrajectory(traj, { transport: fakeTransport, backoffBase: 0 });
+ok("judgeTrajectory returns a HARNESS verdict", verdict.diagnosis === "HARNESS" && (verdict.confidence ?? 0) > 0.9);
+
+const filled = await judgeAndFill(JSON.parse(JSON.stringify(traj)) as Trajectory, { transport: fakeTransport, backoffBase: 0 });
+ok("judgeAndFill writes outcome.verdict", filled.outcome.verdict?.diagnosis === "HARNESS");
+ok("filled trajectory still validates", validate(filled).valid);
+
+// retry path: transport fails once then succeeds
+let calls = 0;
+const flakyTransport = async (...a: [string, Record<string, string>, unknown]) => {
+  calls++;
+  if (calls === 1) throw new Error("HTTP 503");
+  return fakeTransport(...a);
+};
+const retried = await judgeTrajectory(traj, { transport: flakyTransport, backoffBase: 0, maxRetries: 3 });
+ok("judge retries a transient failure", retried.diagnosis === "HARNESS" && calls === 2);
 
 // --- summary ----------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

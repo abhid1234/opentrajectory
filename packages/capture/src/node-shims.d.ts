@@ -41,3 +41,18 @@ declare const console: {
 interface ImportMeta {
   url: string;
 }
+
+// Minimal fetch surface (Node 18+ global) used by the judge.
+interface _OTResponse {
+  ok: boolean;
+  status: number;
+  text(): Promise<string>;
+  json(): Promise<unknown>;
+}
+declare function fetch(
+  url: string,
+  init?: { method?: string; headers?: Record<string, string>; body?: string },
+): Promise<_OTResponse>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare function setTimeout(cb: (...args: any[]) => void, ms: number): unknown;

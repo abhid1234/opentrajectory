@@ -40,11 +40,14 @@ export interface Step {
     decision?: Decision;
 }
 export type OutcomeStatus = "success" | "failure" | "partial" | "unknown";
+export type Diagnosis = "HARNESS" | "TRAINING" | "PRODUCT" | "BOTH" | "CLEAN";
 export interface Verdict {
+    diagnosis?: Diagnosis | string;
     category?: string;
     confidence?: number;
     reasoning?: string;
     offending_step_index?: number | null;
+    evaluator?: string;
 }
 export interface Outcome {
     status: OutcomeStatus;

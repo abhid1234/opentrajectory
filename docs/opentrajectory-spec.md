@@ -110,11 +110,13 @@ Capturers SHOULD redact secrets (tokens, keys, PII). When a value is removed, se
 {
   "status": "success",            // REQUIRED. success | failure | partial | unknown.
   "resolved": true,               // OPTIONAL. task-level boolean (eval ground truth, if known).
-  "verdict": {                    // OPTIONAL. filled by an evaluator (e.g. the Inspector judge), not the capturer.
-    "category": "string",         //   e.g. Clean | Context Gap | Reward Hack | …
+  "verdict": {                    // OPTIONAL. filled by an evaluator (e.g. the reference judge), not the capturer.
+    "diagnosis": "string",        //   5-class code: HARNESS | TRAINING | PRODUCT | BOTH | CLEAN (machine-stable).
+    "category": "string",         //   human label, e.g. Clean | Context Gap | Reward Hack | …
     "confidence": 0.0,
     "reasoning": "string",
-    "offending_step_index": null
+    "offending_step_index": null, //   0-based steps[] index that best exposes the failure.
+    "evaluator": "string"         //   OPTIONAL. what produced the verdict, e.g. "opentrajectory/judge gemini-2.5-flash".
   }
 }
 ```

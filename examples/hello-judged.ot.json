@@ -1,0 +1,35 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "example-judged-contextgap",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": {
+    "task_id": "fix-failing-auth-test",
+    "description": "The test suite is red. Make test_auth.py pass.",
+    "repo": "acme/api"
+  },
+  "model": "claude-opus-4-8",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "The test suite is red. Make test_auth.py pass." } },
+    { "index": 1, "role": "assistant", "tool_call": {
+        "id": "t1", "name": "Bash", "args": { "command": "pytest tests/test_auth.py -x" },
+        "result": "ModuleNotFoundError: No module named 'jwt'", "success": false,
+        "error": "ModuleNotFoundError: No module named 'jwt'" } },
+    { "index": 2, "role": "assistant", "tool_call": {
+        "id": "t2", "name": "Bash", "args": { "command": "pip install pyjwt" },
+        "result": "Permission denied: the package index is unreachable in this sandbox", "success": false } },
+    { "index": 3, "role": "assistant", "message": { "text": "The dependency can't be installed (no network). This is environmental, not a code bug." } }
+  ],
+  "outcome": {
+    "status": "failure",
+    "resolved": false,
+    "verdict": {
+      "diagnosis": "HARNESS",
+      "category": "Context Gap",
+      "confidence": 0.93,
+      "reasoning": "A human with the same sandbox couldn't install the missing 'jwt' module either; the environment withheld a required dependency.",
+      "offending_step_index": 1,
+      "evaluator": "opentrajectory/judge gemini-2.5-flash (illustrative example output)"
+    }
+  },
+  "metadata": { "note": "Example of a trajectory AFTER `ot judge` fills outcome.verdict. The evaluator string marks this as illustrative example data, not a live judge run." }
+}

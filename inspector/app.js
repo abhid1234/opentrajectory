@@ -235,7 +235,7 @@ function renderInspector() {
   const notJudged = !t.judge || !t.judge.diagnosis;     // user-imported traces have no LLM pass
   const hideVerdict = state.challenge && !state.guessed && !notJudged;
   const judgeChip = notJudged
-    ? `<div class="chipv guess-chip"><span class="who">LLM judge</span><span class="dg">—</span><span class="ct">not judged · heuristics only (CLI runs the judge)</span></div>`
+    ? `<div class="chipv guess-chip"><span class="who">LLM judge</span><span class="dg">—</span><span class="ct">not judged · run <code>ot judge</code> to fill the verdict</span></div>`
     : hideVerdict
       ? `<div class="chipv guess-chip"><span class="who">LLM judge</span><span class="dg">?</span><span class="ct">you guess first ↓</span></div>`
       : chip("LLM judge", t.judge.diagnosis, t.judge.category, t.judge.confidence);
@@ -691,8 +691,9 @@ function normalizeOpenTrajectory(r, i) {
     test_split: { gen: null, gold: null },
     resolved,
     messages,
-    // carry any capturer/evaluator verdict through so the card can show it
-    judge: { diagnosis: v.category || null, category: v.category || null,
+    // carry an evaluator verdict (from `ot judge`) through so the card can show it.
+    // diagnosis is the 5-class code (drives the color); category is the human label.
+    judge: { diagnosis: v.diagnosis || v.category || null, category: v.category || v.diagnosis || null,
              confidence: v.confidence != null ? v.confidence : null,
              reasoning: v.reasoning || "", offending_index: v.offending_step_index != null ? v.offending_step_index : null },
     ot: { version: r.ot_version, harness: (r.harness && r.harness.name) || "unknown", status: outcome.status || "unknown" },

@@ -53,11 +53,15 @@ export interface Step {
 
 export type OutcomeStatus = "success" | "failure" | "partial" | "unknown";
 
+export type Diagnosis = "HARNESS" | "TRAINING" | "PRODUCT" | "BOTH" | "CLEAN";
+
 export interface Verdict {
-  category?: string;
+  diagnosis?: Diagnosis | string; // 5-class machine-stable code
+  category?: string; // human label
   confidence?: number;
   reasoning?: string;
   offending_step_index?: number | null;
+  evaluator?: string; // what produced this verdict
 }
 
 export interface Outcome {
