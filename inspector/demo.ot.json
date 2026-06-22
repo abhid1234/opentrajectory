@@ -1,0 +1,48 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "demo-contextgap-claude-code",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": {
+    "task_id": "fix-failing-auth-test",
+    "description": "The test suite is red. Make test_auth.py pass.",
+    "repo": "acme/api"
+  },
+  "model": "claude-opus-4-8",
+  "started_at": "2026-06-22T01:00:00Z",
+  "ended_at": "2026-06-22T01:01:30Z",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "The test suite is red. Make test_auth.py pass." } },
+    { "index": 1, "role": "assistant", "message": { "text": "I'll run the auth tests to see the failure." }, "decision": { "text": "Reproduce the failure before editing", "kind": "plan" } },
+    { "index": 2, "role": "assistant", "tool_call": {
+        "id": "t1", "name": "Bash",
+        "args": { "command": "pytest tests/test_auth.py -x" },
+        "result": "ImportError while importing test module 'tests/test_auth.py'.\nModuleNotFoundError: No module named 'jwt'",
+        "success": false,
+        "error": "ModuleNotFoundError: No module named 'jwt'" } },
+    { "index": 3, "role": "assistant", "message": { "text": "The test imports `jwt` (PyJWT), which isn't installed in this environment. I'll try to install it." } },
+    { "index": 4, "role": "assistant", "tool_call": {
+        "id": "t2", "name": "Bash",
+        "args": { "command": "pip install pyjwt" },
+        "result": "ERROR: Could not find a version that satisfies the requirement pyjwt\nPermission denied: the package index is unreachable in this sandbox",
+        "success": false,
+        "error": "Permission denied: the package index is unreachable in this sandbox" } },
+    { "index": 5, "role": "assistant", "tool_call": {
+        "id": "t3", "name": "Read",
+        "args": { "file_path": "requirements.txt" },
+        "result": "No such file or directory: 'requirements.txt'",
+        "success": false,
+        "error": "No such file or directory: 'requirements.txt'" } },
+    { "index": 6, "role": "assistant", "message": { "text": "I cannot install the missing `jwt` dependency (no network, no requirements file). The failure is environmental — the harness didn't provision the dependency the task needs. I can't make the test pass without it." } },
+    { "index": 7, "role": "assistant", "tool_call": {
+        "id": "t4", "name": "Bash",
+        "args": { "command": "pytest tests/test_auth.py -x" },
+        "result": "ModuleNotFoundError: No module named 'jwt'\n1 error in 0.04s",
+        "success": false } }
+  ],
+  "outcome": {
+    "status": "failure",
+    "resolved": false
+  },
+  "cost": { "input_tokens": 3120, "output_tokens": 410, "usd": 0.0 },
+  "metadata": { "cwd": "/work/acme-api", "git_branch": "main", "session_id": "demo", "note": "Captured live via @opentrajectory/capture PostToolUse hook." }
+}

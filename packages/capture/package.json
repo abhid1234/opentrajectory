@@ -1,0 +1,22 @@
+{
+  "name": "@opentrajectory/capture",
+  "version": "0.1.0",
+  "description": "Zero-dependency OpenTrajectory capture SDK + CLI (Claude Code adapter)",
+  "type": "module",
+  "bin": { "ot": "./dist/cli.js" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx test/run.ts",
+    "validate-example": "node --import tsx src/cli.ts validate ../../examples/hello.ot.json"
+  },
+  "files": ["dist", "src"],
+  "license": "MIT",
+  "comment": "dependencies is intentionally empty — the shipped SDK uses only Node built-ins (corp-airlock constraint). devDependencies are build/test tooling only.",
+  "dependencies": {},
+  "devDependencies": {
+    "tsx": "*",
+    "typescript": "*"
+  }
+}
