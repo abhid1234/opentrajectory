@@ -97,12 +97,15 @@ async function boot() {
 }
 
 function renderTop() {
+  // OpenTrajectory masthead shows identity facts, not the auditor's stat metrics,
+  // so these elements may be absent — set only when present.
   const s = state.summary, rh = s.reward_hack || {};
-  $("#m-h").textContent = n2(rh.heuristic_precision);
-  $("#m-j").textContent = n2(rh.judge_precision);
-  $("#m-c").textContent = (rh.judge_corrects_pct != null ? rh.judge_corrects_pct + "%" : "—");
-  $("#m-n").textContent = (s.n || 0).toLocaleString();
-  $("#m-j").parentElement.classList.add("judge");
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set("#m-h", n2(rh.heuristic_precision));
+  set("#m-j", n2(rh.judge_precision));
+  set("#m-c", rh.judge_corrects_pct != null ? rh.judge_corrects_pct + "%" : "—");
+  set("#m-n", (s.n || 0).toLocaleString());
+  const j = $("#m-j"); if (j && j.parentElement) j.parentElement.classList.add("judge");
 }
 
 /* ---- left rail --------------------------------------------------------- */
@@ -1064,8 +1067,10 @@ function paintTour() {
 }
 
 boot();
+// OpenTrajectory: the auditor's auto-tour copy is dataset-specific; only open it
+// on explicit ?tour so the rebranded preview leads with the trajectory itself.
 try {
-  if (!location.search.includes("notour") && !localStorage.getItem("rlta_tour")) setTimeout(openTour, 600);
+  if (new URLSearchParams(location.search).has("tour") && !localStorage.getItem("rlta_tour")) setTimeout(openTour, 600);
 } catch (e) {}
 
 // exposed for headless testing

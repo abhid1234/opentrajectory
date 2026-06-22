@@ -3,17 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RL Trajectory Auditor — Inspector</title>
-<meta name="description" content="Step through real RL agent trajectories and see where a heuristic and an LLM judge disagree on why a run failed." />
-<meta property="og:title" content="Nobody reads their RL agent trajectories — so we audited 5,000" />
-<meta property="og:description" content="Heuristics over-flag reward-hacking; an LLM judge that reads the trace overturns 75% of those false alarms. Step through the receipts — or drop in your own trajectory." />
+<title>OpenTrajectory — Inspector for the open agent-trajectory format</title>
+<meta name="description" content="OpenTrajectory is the open, vendor-neutral format every AI agent can emit. The Inspector reads a native .ot.json captured from a live run and shows you why it succeeded or failed — entirely in your browser." />
+<meta property="og:title" content="OpenTrajectory — one open format every agent emits" />
+<meta property="og:description" content="Capture a live agent run as a portable .ot.json, then step through it and see why it failed. Open, cross-harness, eval-first." />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://trajectoryauditor.space/" />
-<meta property="og:image" content="https://trajectoryauditor.space/og.png" />
+<meta property="og:url" content="https://github.com/abhid1234/opentrajectory" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Nobody reads their RL agent trajectories — so we audited 5,000" />
-<meta name="twitter:description" content="An LLM judge overturns 75% of a heuristic's reward-hack false alarms. Step through the receipts." />
-<meta name="twitter:image" content="https://trajectoryauditor.space/og.png" />
+<meta name="twitter:title" content="OpenTrajectory — one open format every agent emits" />
+<meta name="twitter:description" content="Capture a live agent run as a portable .ot.json, then step through it and see why it failed. Open, cross-harness, eval-first." />
 <link rel="preload" href="fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -24,34 +22,31 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="k">RL Trajectory Auditor</span>
-      <h1>The <em>Inspector</em></h1>
+      <span class="k">Open Agent-Trajectory Format · v0.1</span>
+      <h1><span class="logomark" aria-hidden="true"><svg viewBox="0 0 40 24" width="40" height="24"><polyline points="1,18 7,18 11,6 16,20 21,11 26,15 31,4 35,12 39,12" /><circle class="head" cx="39" cy="12" r="2.4"/></svg></span>Open<em>Trajectory</em></h1>
     </div>
-    <div class="metric">
-      <span class="lab">Heuristic precision</span>
-      <span class="v" id="m-h">—</span>
+    <span class="brand-div" aria-hidden="true"></span>
+    <div class="fact">
+      <span class="lab">Captures</span>
+      <span class="v">live runs <small>→ portable <code>.ot.json</code></small></span>
     </div>
-    <div class="metric judge">
-      <span class="lab">Judge precision</span>
-      <span class="v" id="m-j">—</span>
+    <div class="fact">
+      <span class="lab">Reads</span>
+      <span class="v">the native format <small>in-browser</small></span>
     </div>
-    <div class="metric">
-      <span class="lab">Judge overturns</span>
-      <span class="v"><b id="m-c">—</b> <small>of heuristic false alarms</small></span>
+    <div class="fact">
+      <span class="lab">Diagnoses</span>
+      <span class="v">why a run <small>failed</small></span>
     </div>
     <span class="grow"></span>
-    <button id="btn-import" class="topbtn import" title="inspect your own trajectory — runs entirely in your browser">⬆ Inspect yours</button>
-    <button id="btn-daily" class="topbtn" title="one specimen a day — guess the diagnosis, keep a streak">📅 Daily</button>
-    <button id="btn-map" class="topbtn" title="every judged run as one dot — the failure map">🗺 Map</button>
-    <button id="btn-finding" class="topbtn" title="the finding (front page)">◆ Finding</button>
-    <button id="btn-challenge" class="topbtn" title="free-play: guess the diagnosis on any trace">🎯 Challenge</button>
+    <button id="btn-import" class="topbtn import" title="inspect your own OpenTrajectory file — runs entirely in your browser">▲ Inspect a trajectory</button>
     <button id="btn-share" class="topbtn" title="copy a link to this exact view">⤴ Share</button>
     <button id="btn-keys" class="topbtn" title="keyboard shortcuts">⌨</button>
     <button id="mode-toggle" class="modetoggle" title="toggle the full expert view">Expert view ›</button>
     <div class="src">
-      <div>source <b>nebius/SWE-rebench-openhands</b></div>
-      <div>judge <b>Gemini 2.5 Flash</b> · audited <b id="m-n">—</b></div>
-      <div><a class="srclink" href="https://github.com/abhid1234/rl-trajectory-auditor" target="_blank" rel="noopener">code · github ↗</a></div>
+      <div><a class="srclink" href="https://github.com/abhid1234/opentrajectory/blob/main/docs/opentrajectory-spec.md" target="_blank" rel="noopener">spec v0.1 ↗</a> · <a class="srclink" href="https://github.com/abhid1234/opentrajectory/tree/main/packages/capture" target="_blank" rel="noopener">capture SDK ↗</a></div>
+      <div>open · vendor-neutral · eval-first</div>
+      <div><a class="srclink" href="https://github.com/abhid1234/opentrajectory" target="_blank" rel="noopener">github ↗</a></div>
     </div>
   </header>
 

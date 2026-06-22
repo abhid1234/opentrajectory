@@ -641,3 +641,91 @@ body.simple .stickybar { position:static; box-shadow:none; }
 .inspect { position:sticky; top:92px; align-self:start; max-height:calc(100vh - 150px); overflow-y:auto; border-bottom:1px solid var(--rule); }
 .insp::-webkit-scrollbar { width:10px; }
 .insp::-webkit-scrollbar-thumb { background:var(--rule); border-radius:5px; }
+
+/* ============================================================ *
+ *  OpenTrajectory theme  —  "blueprint / signal-trace"
+ *  Cool slate canvas, monospace wordmark, dark infrastructural
+ *  masthead, electric-lime signal accent + live trace motif.
+ *  Override block: wins by cascade, leaves component logic intact.
+ * ============================================================ */
+:root {
+  /* cool slate canvas (was warm cream) */
+  --paper:#eceff3; --paper-2:#e4e9ef; --card:#f7f9fc;
+  --ink:#0e1319; --ink-soft:#586273; --rule:#d5dbe4;
+  /* on-light accent — deep signal emerald (readable as text) */
+  --oxblood:#0c7a61; --oxblood-2:#0a6350;
+  /* masthead + signal */
+  --mast:#0d1117; --mast-2:#151b23; --mast-line:#222b36;
+  --signal:#b6f000; --signal-dim:#9ccb15; --mast-fg:#cdd6e2; --mast-soft:#7f8a99;
+}
+::selection { background:rgba(12,122,97,0.20); }
+
+/* faint blueprint dot-grid on the light workspace */
+body {
+  background-color:var(--paper);
+  background-image:radial-gradient(rgba(14,19,25,0.045) 1px, transparent 1px);
+  background-size:19px 19px;
+}
+
+/* ---- masthead: dark, technical, signal-accented ------------ */
+.topbar {
+  background:var(--mast); color:var(--mast-fg);
+  border-bottom:1px solid var(--mast-line);
+  background-image:radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size:15px 15px; gap:24px; position:relative;
+}
+.topbar::after {
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(182,240,0,0.55), transparent);
+}
+.brand { gap:2px; }
+.brand .k { color:var(--signal-dim); letter-spacing:0.22em; font-size:9px; }
+.brand h1 {
+  font-family:var(--mono); font-weight:700; font-size:18px; color:#fff;
+  display:flex; align-items:center; gap:11px; letter-spacing:-0.02em; margin-top:4px;
+}
+.brand h1 em { font-style:normal; color:var(--signal); }
+.logomark { display:inline-flex; }
+.logomark svg { display:block; overflow:visible; }
+.logomark polyline {
+  fill:none; stroke:var(--signal); stroke-width:2; stroke-linejoin:round; stroke-linecap:round;
+  filter:drop-shadow(0 0 4px rgba(182,240,0,0.45));
+  stroke-dasharray:130; stroke-dashoffset:130; animation:ot-draw 1.5s cubic-bezier(.4,0,.1,1) forwards 0.25s;
+}
+.logomark .head {
+  fill:var(--signal); filter:drop-shadow(0 0 5px rgba(182,240,0,0.85));
+  opacity:0; animation:ot-pulse 2.4s ease-in-out infinite 1.6s;
+}
+@keyframes ot-draw  { to { stroke-dashoffset:0; } }
+@keyframes ot-pulse { 0%,100%{ opacity:0.5; } 50%{ opacity:1; } }
+
+.brand-div { width:1px; align-self:stretch; margin:6px 0;
+  background:linear-gradient(transparent, rgba(255,255,255,0.16), transparent); }
+
+/* identity facts (replace the auditor stat metrics) */
+.fact { display:flex; flex-direction:column; gap:3px; }
+.fact .lab { font-family:var(--mono); font-size:8.5px; letter-spacing:0.18em;
+  text-transform:uppercase; color:var(--signal-dim); }
+.fact .v { font-family:var(--mono); font-size:12px; color:var(--mast-fg); font-weight:500; }
+.fact .v small { color:var(--mast-soft); font-size:11px; }
+.fact .v code { font-family:var(--mono); color:var(--signal);
+  background:rgba(182,240,0,0.10); padding:0 4px; border-radius:3px; font-size:10.5px; }
+
+/* masthead buttons on dark */
+.topbar .topbtn { background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.13); color:#aab4c2; }
+.topbar .topbtn:hover { border-color:var(--signal); color:#fff; }
+.topbar .topbtn.import { background:var(--signal); color:#0d1117; border-color:var(--signal); font-weight:700; transition:box-shadow .18s ease; }
+.topbar .topbtn.import:hover { background:var(--signal); color:#0d1117; box-shadow:0 0 20px rgba(182,240,0,0.45); }
+.topbar .modetoggle { background:transparent; border:1px solid rgba(255,255,255,0.2); color:#aab4c2; }
+.topbar .modetoggle:hover { background:var(--signal); border-color:var(--signal); color:#0d1117; }
+.topbar .src { color:var(--mast-soft); }
+.topbar .src b { color:var(--mast-fg); }
+.topbar .srclink { color:var(--signal-dim); border-bottom:1px solid rgba(182,240,0,0.3); }
+.topbar .srclink:hover { color:var(--signal); border-color:var(--signal); }
+
+/* empty state -> technical, not serif */
+.empty { font-family:var(--mono); font-style:normal; font-size:13px; line-height:1.7; color:var(--ink-soft); padding:0 24px; text-align:center; }
+.empty code { background:rgba(12,122,97,0.10); color:var(--oxblood); padding:1px 5px; border-radius:3px; }
+
+/* import "yours" pill keeps the signal identity inside the workspace */
+.tnav.local { border-left:2px solid var(--signal-dim); }
