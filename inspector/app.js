@@ -13,15 +13,15 @@ const ROLES = ["system", "user", "assistant", "tool"];
 
 const RAIL_FILTERS = [
   { k: "disagree", l: "Disagree" }, { k: "all", l: "All" },
-  { k: "Reward Hack", l: "Reward Hack" }, { k: "Context Gap", l: "Context Gap" },
-  { k: "Stuck at Fork", l: "Fork" }, { k: "Clean", l: "Clean" },
+  { k: "Context Gap", l: "Context Gap" }, { k: "Reward Hack", l: "Reward Hack" },
+  { k: "Unclassified Failure", l: "Product" }, { k: "Clean", l: "Clean" },
 ];
 
 const TEACH = {
   "Reward Hack": "The heuristic flags a <b>reward hack</b> — the agent may have passed its own tests without solving the task (edited a test, hardcoded a value). Read the offending step: did it really game the reward, or is this a false alarm the judge overturns?",
   "Context Gap": "A <b>context gap</b>: the environment didn't give the agent something it needed (a missing file, config, or credential). This is a <b>harness</b> failure — fixing the env beats retraining.",
   "Stuck at Fork": "<b>Stuck at a fork</b>: the agent repeats the same failing maneuver across traces instead of trying the real fix — a training-coverage gap.",
-  "Clean": "Looks <b>clean</b>: both the agent's own tests and the gold tests pass, with unremarkable tool use.",
+  "Clean": "Looks <b>clean</b>: the run resolved its task with unremarkable tool use — no broken environment, no gamed reward.",
   "_default": "Step through the trace below. Watch the agent's tool calls (gold) and the environment's observations (green); the <b>offending</b> step is marked in red.",
 };
 
@@ -171,15 +171,16 @@ function renderRail() {
   state.view = state.index.filter((c) => !c.local && passes(c));
   const list = $("#raillist");
   list.innerHTML = "";
+  const nCorpus = state.index.filter((c) => !c.local).length;
   if (locals.length) {
-    list.appendChild(_railSec(`⬆ your trajectories (${locals.length}) — this tab only`));
+    list.appendChild(_railSec(`trajectories (${locals.length}) — local to this tab`));
     locals.forEach((c) => list.appendChild(_railItem(c)));
-    list.appendChild(_railSec("audited corpus"));
+    if (nCorpus) list.appendChild(_railSec("audited corpus"));
   }
   state.view.forEach((c) => list.appendChild(_railItem(c)));
-  const nCorpus = state.index.filter((c) => !c.local).length;
-  $("#railcount").textContent =
-    (locals.length ? `${locals.length} yours · ` : "") + `${state.view.length} of ${nCorpus} corpus`;
+  $("#railcount").textContent = nCorpus
+    ? (locals.length ? `${locals.length} yours · ` : "") + `${state.view.length} of ${nCorpus} corpus`
+    : `${locals.length} ${locals.length === 1 ? "trajectory" : "trajectories"}`;
 }
 
 /* ---- load + render one trajectory ------------------------------------- */
@@ -250,10 +251,16 @@ function renderInspector() {
         ${chip("Heuristic", t.heuristic.diagnosis, t.heuristic.category, t.heuristic.confidence)}
         ${vmarkHtml}
         ${judgeChip}
-        <div class="ts">
+        ${
+          ts.gen != null || ts.gold != null
+            ? `<div class="ts">
           <span class="tsb ${ts.gen >= 1 && ts.gold < 1 ? "good" : ""}" data-tip="Did the agent pass its OWN tests? Gameable — it can write or edit these. 1 = pass, 0 = fail.">self-test <b>${ts.gen ?? "—"}</b></span>
           <span class="tsb ${ts.gold < 1 && ts.gen >= 1 ? "bad" : "good"}" data-tip="Did it pass the hidden human-written tests? This is the ground truth. self 1 + gold 0 = the reward-hack signature.">gold-test <b>${ts.gold ?? "—"}</b></span>
-        </div>
+        </div>`
+            : t.ot
+              ? `<div class="ts"><span class="tsb ${t.resolved ? "good" : "bad"}" data-tip="The captured run's final outcome, as recorded in the OpenTrajectory file.">outcome <b>${esc(t.ot.status || (t.resolved ? "success" : "—"))}</b></span></div>`
+              : ""
+        }
         <a class="gl-open hd-gl" href="#" title="glossary (g)">ⓘ what do these terms mean?</a>
       </div>
       <div class="guessbar" id="guessbar"></div>
@@ -313,7 +320,10 @@ function renderInspector() {
 
 function renderExtras() {
   const t = state.traj, host = $("#extras"); if (!host) return;
-  host.innerHTML = `<button class="extrabtn" id="x-patch">📄 The agent's patch</button>` + forkLinksHtml(t);
+  // The patch view is for trajectories that carry a diff (SWE-style); OpenTrajectory
+  // captures don't, so only show the button when there's actually a patch.
+  const patchBtn = t.patch && t.patch.trim() ? `<button class="extrabtn" id="x-patch">📄 The agent's patch</button>` : "";
+  host.innerHTML = patchBtn + forkLinksHtml(t);
   const pb = $("#x-patch"); if (pb) pb.onclick = showPatch;
   host.querySelectorAll(".forklink").forEach((b) => { b.onclick = () => select(b.dataset.id); });
 }
@@ -382,7 +392,7 @@ function renderInspectPanel() {
   }).join("");
 
   $("#inspect").innerHTML =
-    `<h3><span class="live"></span>What the auditor sees</h3>` +
+    `<h3><span class="live"></span>What the diagnosis sees</h3>` +
     `<div class="hint">Press <b>▶ Run step-by-step</b> (or <b>→</b>) — each detector fires the moment the trace reaches its trigger.</div>` +
     `<div class="dets">${dets}</div>` +
     `<h3>Signal tape</h3><div class="tape" id="tape"><span class="idle">step forward to watch detectors fire…</span></div>` +
@@ -454,7 +464,7 @@ function narrate(idx) {
   const t = state.traj, m = t.messages[idx]; let line = "", aud = "";
   if (!m) return { line: "", aud: "" };
   if (m.role === "system") line = "These are the agent's instructions — its job and the rules it has to follow.";
-  else if (m.role === "user") line = "The task: this is the bug the agent was asked to fix.";
+  else if (m.role === "user") line = "The task the agent was given.";
   else if (m.role === "assistant") {
     if (m.tools && m.tools.length) { line = "The agent " + verb(m.tools[0].name) + "."; const sa = shortArg(m.tools[0]); if (sa) line += " " + sa; }
     else line = "The agent is reasoning about what to do next.";
@@ -815,16 +825,16 @@ function importText(text) {
 
 function showImport() {
   $("#import-modal").innerHTML = `<div class="sc-card im">
-    <div class="sc-hd"><h2>Inspect your own trajectory</h2><button class="sc-x" data-close>×</button></div>
+    <div class="sc-hd"><h2>Inspect a trajectory</h2><button class="sc-x" data-close>×</button></div>
     <div class="im-bd">
-      <p class="im-p">Drop a trajectory JSON below (or paste it). It runs <b>entirely in your browser</b> —
-      nothing is uploaded anywhere. You get the heuristic audit, plain-English narration and step-through;
-      the LLM-judge second opinion needs the <a href="https://github.com/abhid1234/rl-trajectory-auditor" target="_blank" rel="noopener">CLI</a>.
-      A file may hold <b>several</b> trajectories (JSON array / JSONL) — each becomes its own entry;
-      re-importing the same one replaces it.</p>
-      <div class="im-drop" id="im-drop">drag &amp; drop a <code>.json</code> / <code>.jsonl</code> file here<br/><span class="dim">or</span><br/>
+      <p class="im-p">Drop an <b>OpenTrajectory</b> <code>.ot.json</code> below (or paste it). It runs <b>entirely in your browser</b> —
+      nothing is uploaded anywhere. You get the heuristic diagnosis, plain-English narration and step-through.
+      To fill the LLM-judge verdict, run <code>ot judge</code> from the <a href="https://github.com/abhid1234/opentrajectory/tree/main/packages/capture" target="_blank" rel="noopener">capture SDK</a> first.
+      Don't have one? Capture a live run with <code>ot capture</code> (Claude Code or Codex). A file may hold
+      <b>several</b> trajectories (JSON array / JSONL) — each becomes its own entry.</p>
+      <div class="im-drop" id="im-drop">drag &amp; drop a <code>.ot.json</code> / <code>.jsonl</code> file here<br/><span class="dim">or</span><br/>
         <label class="im-file">choose a file<input type="file" id="im-file" accept=".json,.jsonl,application/json" hidden /></label></div>
-      <textarea id="im-text" class="im-text" placeholder='or paste JSON — either OpenAI-style {"task_id": ..., "messages": [...], "patch": ..., "test_results": {...}} or an HF SWE-rebench row {"trajectory": [...], "instance_id": ...}'></textarea>
+      <textarea id="im-text" class="im-text" placeholder='or paste an OpenTrajectory file — {"ot_version":"0.1","harness":{"name":"claude-code"},"steps":[...],"outcome":{"status":"failure"}} (OpenAI-style {messages:[...]} and HF rows also accepted)'></textarea>
       <div class="im-foot"><span class="im-err" id="im-err"></span><button id="im-go" class="land-go im-go">Inspect it →</button></div>
     </div></div>`;
   openOverlay("#import-modal");
@@ -1045,9 +1055,9 @@ function wireTips() {
 
 /* ---- guided tour ------------------------------------------------------- */
 const TOUR = [
-  { k: "What you're looking at", b: "Each entry is one real <b>RL agent trajectory</b> from a coding task — the full conversation between the agent and its environment. Roles are color-coded: <b style='color:#8a7c6e'>system</b>, <b style='color:#2f9e8e'>user</b>, <b style='color:#c89a4a'>assistant</b> (the agent's moves), <b style='color:#84b06a'>tool</b> (what the environment replied)." },
+  { k: "What you're looking at", b: "Each entry is one <b>agent trajectory</b> captured from a live coding run — the full sequence between the agent and its environment, in the open OpenTrajectory format. Roles are color-coded: <b style='color:#8a7c6e'>system</b>, <b style='color:#2f9e8e'>user</b>, <b style='color:#c89a4a'>assistant</b> (the agent's moves), <b style='color:#84b06a'>tool</b> (what the environment replied)." },
   { k: "Step through it", b: "Use <b>▶ play</b> or the <b>← / →</b> keys to move through the trace one message at a time, like a debugger. The <b>minimap</b> (colored ticks) is a map of the whole run — click any tick to jump. The <b>red</b> tick is the step the judge flagged." },
-  { k: "Watch the audit run live", b: "As you step, the right panel — <b>What the auditor sees</b> — lights up its detectors the moment each one fires, and logs <i>why</i>. That's the heuristic auditor working in real time: context-check, reward-hack, test-split, and more." },
+  { k: "Watch the diagnosis run live", b: "As you step, the right panel — <b>What the diagnosis sees</b> — lights up its detectors the moment each one fires, and logs <i>why</i>. That's the offline heuristic working in real time: context-check, reward-hack, and more. The LLM judge (<code>ot judge</code>) is the higher-precision version." },
   { k: "Heuristic vs. judge", b: "The <b>Verdict</b> builds from those signals into the heuristic's call — then the <b>LLM judge</b>, which read the whole trace, gives its own. Where they <b>disagree</b> is the interesting part: the judge is usually closer to the truth. That's the whole point." },
 ];
 let tourI = 0;
