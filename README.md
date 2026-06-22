@@ -13,9 +13,10 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Format spec** (v0.1) | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 47 tests |
-| **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) | ✅ |
-| **Inspector reads the native format + verdict** | [`inspector/`](inspector/) | ✅ 8 tests |
-| **Wedge demo** (live run → emit → audit) | [`demo/`](demo/) | ✅ |
+| **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
+| **Judge benchmark** (labeled gold set, heuristic-vs-judge correction rate) | [`bench/`](bench/) | ✅ heuristic 11/14 |
+| **Inspector reads the native format + verdict** | [`inspector/`](inspector/) | ✅ 12 tests |
+| **Wedge demo + self-improvement loop demo** | [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
 v1 ships **two capture adapters — Claude Code and Codex CLI** — both verified first-hand against real on-disk sessions, both reading into one format the same Inspector audits (the cross-harness proof). Gemini/LangGraph adapters and a hosted trajectory registry are next (their emit shapes are already characterized in the analysis doc). The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
@@ -40,6 +41,7 @@ See [`demo/README.md`](demo/README.md) for the full live-capture-hook setup.
 ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages
+ot diagnose <file.ot.json>                                  offline heuristic diagnosis (no API key)
 ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge
 ot hook                                                      live PostToolUse hook (reads stdin)
 ```
@@ -63,13 +65,22 @@ GEMINI_API_KEY=… ot judge run.ot.json   # fills outcome.verdict in place
 > LLM judge. Use `--dry-run` to see exactly what would be sent. See
 > [`examples/hello-judged.ot.json`](examples/hello-judged.ot.json) for the output shape.
 
+**Is the evaluator trustworthy?** Don't take it on faith — [`bench/`](bench/) is a labeled gold
+set that scores the heuristic (offline) and the judge (with a key) and reports how many of the
+heuristic's mistakes the judge corrects. Today the offline heuristic scores **11/14**, missing
+exactly the ambiguous reward-hack cases an LLM that reads the trace is meant to catch. And
+[`demo/loop/`](demo/loop/) shows a diagnosis driving one full self-improvement turn
+(fail → diagnose HARNESS → fix the harness → pass).
+
 ## Tests
 
 ```bash
-# SDK (validators, both adapters, redaction, round-trip, hook, judge) — 47 tests
+# SDK (validators, both adapters, redaction, round-trip, hook, heuristic, judge) — 51 tests
 cd packages/capture && node --import tsx test/run.ts
 # Inspector ingestion path (native OT, both harnesses, Context-Gap diagnosis) — 12 tests, plain node
 node inspector/test-ingest.mjs
+# Judge benchmark — heuristic accuracy now; add --judge with a key
+node --import tsx bench/score.ts
 ```
 
 ## Design principles

@@ -4,6 +4,7 @@
 //   ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 //   ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 //   ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages (Inspector input)
+//   ot diagnose <file.ot.json>                                  offline heuristic diagnosis (no API key)
 //   ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge (Gemini)
 //   ot hook                                                      live PostToolUse hook (reads stdin)
 import { readFileSync, writeFileSync } from "node:fs";
@@ -13,6 +14,7 @@ import { validate } from "./validate.js";
 import { toMessages } from "./to-messages.js";
 import { runHook } from "./hook.js";
 import { judgeAndFill, buildJudgePrompt, estimateCost } from "./judge.js";
+import { diagnoseHeuristic } from "./heuristic.js";
 import type { Trajectory } from "./types.js";
 
 function arg(flags: string[], argv: string[]): string | undefined {
@@ -92,6 +94,16 @@ function main(): void {
     return;
   }
 
+  if (cmd === "diagnose") {
+    const input = rest.find((a) => !a.startsWith("-"));
+    if (!input) return fail("usage: ot diagnose <file.ot.json>   (offline heuristic, no API key)");
+    const traj = JSON.parse(readFileSync(input, "utf8")) as Trajectory;
+    const h = diagnoseHeuristic(traj);
+    process.stdout.write(`${h.diagnosis} (${h.category}) · conf ${h.confidence}\n`);
+    for (const e of h.evidence) process.stdout.write(`  - ${e}\n`);
+    return;
+  }
+
   if (cmd === "judge") {
     const input = rest.find((a) => !a.startsWith("-"));
     if (!input) return fail("usage: ot judge <file.ot.json> [-o out] [--model M] [--dry-run]");
@@ -124,6 +136,7 @@ function main(): void {
       "  ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]\n" +
       "  ot validate <file.ot.json|.ot.jsonl>\n" +
       "  ot to-messages <file.ot.json> [-o out.json]\n" +
+      "  ot diagnose <file.ot.json>   (offline heuristic, no key)\n" +
       "  ot judge <file.ot.json> [-o out] [--model M] [--dry-run]\n" +
       "  ot hook   (live PostToolUse hook; reads stdin)",
   );

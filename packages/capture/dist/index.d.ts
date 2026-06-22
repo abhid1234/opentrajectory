@@ -4,6 +4,8 @@ export type { ValidationResult } from "./validate.js";
 export { parseTranscript, fromClaudeCode, captureFromTranscript } from "./from-claude-code.js";
 export { parseRollout, fromCodex, captureFromRollout, looksLikeCodex } from "./from-codex.js";
 export { redact, truncate, asText } from "./redact.js";
+export { diagnoseHeuristic } from "./heuristic.js";
+export type { HeuristicResult } from "./heuristic.js";
 export { toMessages } from "./to-messages.js";
 export type { MessagesRecord, OpenAIMessage } from "./to-messages.js";
 export { stepFromPayload, appendStep, sidecarPath, runHook } from "./hook.js";

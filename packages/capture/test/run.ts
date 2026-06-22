@@ -9,6 +9,7 @@ import { captureFromRollout, looksLikeCodex } from "../src/from-codex.js";
 import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
 import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
+import { diagnoseHeuristic } from "../src/heuristic.js";
 import type { Trajectory } from "../src/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -148,6 +149,24 @@ ok("does not misdetect claude transcript", looksLikeCodex(transcript) === false)
 // cross-harness invariant: both adapters emit the SAME shape the Inspector reads
 const cxMsgs = toMessages(cx);
 ok("codex -> messages round-trips", cxMsgs.messages.some((m) => m.tool_calls?.[0]?.function.name === "shell_command"));
+
+// --- 6c. heuristic diagnoser (offline, no key) ------------------------------
+console.log("heuristic");
+const hCtx = diagnoseHeuristic({ ot_version: "0.1", trajectory_id: "h1", harness: { name: "x" },
+  steps: [{ index: 0, role: "assistant", tool_call: { name: "Bash", args: { command: "pytest" }, result: "ModuleNotFoundError: No module named 'jwt'", success: false } }],
+  outcome: { status: "failure", resolved: false } } as Trajectory);
+ok("heuristic flags HARNESS on context gap", hCtx.diagnosis === "HARNESS");
+ok("heuristic cites evidence", hCtx.evidence.length > 0);
+
+const hClean = diagnoseHeuristic({ ot_version: "0.1", trajectory_id: "h2", harness: { name: "x" },
+  steps: [{ index: 0, role: "assistant", tool_call: { name: "Bash", args: { command: "npm test" }, result: "All passed", success: true } }],
+  outcome: { status: "success", resolved: true } } as Trajectory);
+ok("heuristic returns CLEAN on resolved success", hClean.diagnosis === "CLEAN");
+
+const hHack = diagnoseHeuristic({ ot_version: "0.1", trajectory_id: "h3", harness: { name: "x" },
+  steps: [{ index: 0, role: "assistant", tool_call: { name: "Edit", args: { file_path: "tests/test_x.py", old_string: "==5", new_string: "==4" }, result: "ok", success: true } }],
+  outcome: { status: "success", resolved: true } } as Trajectory);
+ok("heuristic flags TRAINING on test-file edit", hHack.diagnosis === "TRAINING");
 
 // --- 7. judge: prompt, parse, full run via injected transport ---------------
 console.log("judge");

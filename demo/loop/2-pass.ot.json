@@ -1,0 +1,14 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "loop-turn2-pass",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "task_id": "ship-auth", "description": "Make the auth test suite pass.", "repo": "acme/api" },
+  "model": "claude-opus-4-8",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "Make the auth test suite pass." } },
+    { "index": 1, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pytest tests/test_auth.py" }, "result": "12 passed in 0.3s", "success": true } },
+    { "index": 2, "role": "assistant", "message": { "text": "All auth tests pass — the 'jwt' dependency is now available in the environment." } }
+  ],
+  "outcome": { "status": "success", "resolved": true },
+  "metadata": { "loop_turn": 2, "note": "Same task, same model — only the HARNESS was fixed (the dep was provisioned). Now it passes." }
+}
