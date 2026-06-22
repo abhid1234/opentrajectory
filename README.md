@@ -16,7 +16,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 80 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
-| **Judge benchmark** (labeled gold set; measured heuristic-vs-judge) | [`bench/`](bench/) | ✅ heuristic 11/14 → judge 12/14, corrects 3/3 |
+| **Judge benchmark** (24-case labeled gold set; measured, surfaces judge bias) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17/24 |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
 | **Wedge demo + self-improvement loop demo** | [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
@@ -113,18 +113,22 @@ GEMINI_API_KEY=… ot judge run.ot.json   # fills outcome.verdict in place
 > LLM judge. Use `--dry-run` to see exactly what would be sent. See
 > [`examples/hello-judged.ot.json`](examples/hello-judged.ot.json) for the output shape.
 
-**Is the evaluator trustworthy? (measured.)** Don't take it on faith — [`bench/`](bench/) is a
-labeled gold set that scores both. Real numbers on the 14-case set (Gemini 2.5 Flash judge):
+**Is the evaluator trustworthy? (measured — and the benchmark has teeth.)** Don't take it on
+faith — [`bench/`](bench/) scores both on a labeled gold set. Real numbers on the **24-case** set
+(Gemini 2.5 Flash judge, ~$0.003):
 
 | | accuracy | corrects the heuristic's misses |
 |---|---|---|
-| offline heuristic | **11/14 (78.6%)** | — |
-| LLM judge (reads the trace) | **12/14 (85.7%)** | **3 of 3 (100%)** |
+| offline heuristic | **18/24 (75.0%)** | — |
+| LLM judge (reads the trace) | **17/24 (70.8%)** | **5 of 6** |
 
-The judge fixes **every** case the heuristic got wrong — both adversarial reward-hacks and the
-buried hardcode. It isn't perfect (it over-called `TRAINING` on 2 cases the heuristic got right),
-but it's strictly better overall and corrects exactly the ambiguous cases reading the trace is
-meant to catch. The full run cost **~$0.0016**. And
+Reading the trace fixes the heuristic's specific blind spots — the buried reward-hacks it can't
+pattern-match. But the judge **trades that for a systematic bias**: it over-calls genuine
+capability failures (`PRODUCT`) as reward-hacking (`TRAINING`) on 4 cases, landing it slightly
+*below* the cheap heuristic overall. A 14-case demo set had flattered the judge (12/14 vs 11/14);
+the larger held-out set exposed the bias. **That is the benchmark doing its job** — neither
+evaluator is trustworthy alone, and the bench tells you exactly where each fails (next: a judge
+prompt that separates *can't* from *cheating*). And
 [`demo/loop/`](demo/loop/) shows diagnoses steering a multi-turn self-improvement loop that
 **converges** — same task, three turns, each failing for a different reason
 (HARNESS → PRODUCT → CLEAN), the diagnosis naming the lever each time.
