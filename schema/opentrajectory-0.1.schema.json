@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/abhid1234/opentrajectory/schema/opentrajectory-0.1.schema.json",
+  "title": "OpenTrajectory",
+  "description": "Open, vendor-neutral format for one AI agent run. v0.1. Canonical machine-readable companion to docs/opentrajectory-spec.md.",
+  "type": "object",
+  "required": ["ot_version", "trajectory_id", "harness", "steps", "outcome"],
+  "additionalProperties": true,
+  "properties": {
+    "ot_version": { "type": "string", "description": "Spec version, e.g. \"0.1\"." },
+    "trajectory_id": { "type": "string", "minLength": 1 },
+    "harness": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "e.g. claude-code | codex-cli | gemini-cli | langgraph" },
+        "version": { "type": "string" }
+      }
+    },
+    "task": {
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "string" },
+        "description": { "type": "string" },
+        "repo": { "type": "string" }
+      }
+    },
+    "model": { "type": "string" },
+    "started_at": { "type": "string" },
+    "ended_at": { "type": "string" },
+    "steps": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/step" }
+    },
+    "outcome": { "$ref": "#/$defs/outcome" },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "input_tokens": { "type": "number" },
+        "output_tokens": { "type": "number" },
+        "usd": { "type": "number" }
+      }
+    },
+    "metadata": { "type": "object" },
+    "extensions": { "type": "object" },
+    "raw": { "type": "object" }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["index", "role"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "description": "0-based position within steps[]." },
+        "role": { "type": "string", "enum": ["assistant", "user", "tool", "system", "subagent"] },
+        "ts": { "type": "string" },
+        "parent_index": { "type": ["integer", "null"] },
+        "is_subagent": { "type": "boolean" },
+        "message": {
+          "type": "object",
+          "required": ["text"],
+          "properties": { "text": { "type": "string" }, "redacted": { "type": "boolean" } }
+        },
+        "tool_call": {
+          "type": "object",
+          "required": ["name", "args", "success"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string", "minLength": 1 },
+            "args": { "type": "object" },
+            "args_text": { "type": "string" },
+            "result": { "type": "string" },
+            "success": { "type": "boolean" },
+            "error": { "type": "string" },
+            "duration_ms": { "type": "number" },
+            "redacted": { "type": "boolean" }
+          }
+        },
+        "decision": {
+          "type": "object",
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string" },
+            "kind": { "type": "string", "enum": ["plan", "retry", "branch", "give_up", "other"] }
+          }
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["success", "failure", "partial", "unknown"] },
+        "resolved": { "type": "boolean" },
+        "verdict": {
+          "type": "object",
+          "properties": {
+            "diagnosis": { "type": "string", "enum": ["HARNESS", "TRAINING", "PRODUCT", "BOTH", "CLEAN"] },
+            "category": { "type": "string" },
+            "confidence": { "type": "number" },
+            "reasoning": { "type": "string" },
+            "offending_step_index": { "type": ["integer", "null"] },
+            "evaluator": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

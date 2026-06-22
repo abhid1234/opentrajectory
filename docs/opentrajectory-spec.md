@@ -129,7 +129,12 @@ A `.ot.jsonl` file holds one trajectory object per line. Tools (and the Inspecto
 
 ## 7. Conformance
 
-A document is **conformant v0.1** if: `ot_version`, `trajectory_id`, `harness.name`, `steps`, and `outcome.status` are present; every `steps[i].index` is the 0-based position; and every `tool_call` (where present) has `name`, `args`, and `success`. The reference validator (`packages/capture/src/validate.ts`) enforces exactly this.
+A document is **conformant v0.1** if: `ot_version`, `trajectory_id`, `harness.name`, `steps`, and `outcome.status` are present; every `steps[i].index` is the 0-based position; and every `tool_call` (where present) has `name`, `args`, and `success`.
+
+Three things enforce exactly this, kept in lockstep by a cross-check test:
+- the reference validator `packages/capture/src/validate.ts` (zero-dep, used by the SDK/CLI),
+- the standalone CI validator `tools/ot-validate.mjs` (zero-dep, no build — what the GitHub Action runs),
+- the machine-readable **JSON Schema** `schema/opentrajectory-0.1.schema.json` (draft 2020-12), for editors and third-party tooling.
 
 ---
 

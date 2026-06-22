@@ -1,0 +1,21 @@
+name: "OpenTrajectory validate"
+description: "Validate OpenTrajectory .ot.json / .ot.jsonl files for v0.1 conformance (zero-dependency)."
+branding:
+  icon: "check-circle"
+  color: "green"
+inputs:
+  path:
+    description: "File or directory to validate (recurses for *.ot.json / *.ot.jsonl)."
+    required: false
+    default: "."
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - shell: bash
+      env:
+        OT_PATH: ${{ inputs.path }}
+        OT_ACTION_PATH: ${{ github.action_path }}
+      run: node "$OT_ACTION_PATH/tools/ot-validate.mjs" "$OT_PATH"

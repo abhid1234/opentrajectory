@@ -1,0 +1,34 @@
+name: validate trajectories
+
+# Dogfoods OpenTrajectory conformance: every push/PR validates the repo's own
+# .ot.json fixtures (examples, demos, benchmark) against the v0.1 spec.
+# Adopters: copy this job, or use the composite action — `uses: abhid1234/opentrajectory@main`.
+on:
+  push:
+  pull_request:
+
+jobs:
+  ot-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate OpenTrajectory files
+        run: node tools/ot-validate.mjs examples demo inspector bench/gold
+
+  sdk-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm i -g tsx typescript
+      - name: SDK tests
+        run: tsx packages/capture/test/run.ts
+      - name: Inspector ingestion tests
+        run: node inspector/test-ingest.mjs
+      - name: Build (zero-dep type-check)
+        run: tsc -p packages/capture/tsconfig.json

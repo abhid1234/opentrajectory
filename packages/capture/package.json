@@ -1,18 +1,41 @@
 {
   "name": "@opentrajectory/capture",
   "version": "0.1.0",
-  "description": "Zero-dependency OpenTrajectory capture SDK + CLI (Claude Code adapter)",
+  "description": "Zero-dependency OpenTrajectory capture SDK + CLI — capture AI agent runs (Claude Code, Codex) into one open, vendor-neutral .ot.json format; validate, diagnose, and judge them.",
   "type": "module",
   "bin": { "ot": "./dist/cli.js" },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --import tsx test/run.ts",
-    "validate-example": "node --import tsx src/cli.ts validate ../../examples/hello.ot.json"
+    "validate-example": "node --import tsx src/cli.ts validate ../../examples/hello.ot.json",
+    "prepublishOnly": "npm run build && npm test"
   },
   "files": ["dist", "src"],
+  "keywords": [
+    "opentrajectory",
+    "agent",
+    "trajectory",
+    "ai-agent",
+    "llm",
+    "evals",
+    "observability",
+    "claude-code",
+    "codex",
+    "trace",
+    "open-standard"
+  ],
+  "homepage": "https://github.com/abhid1234/opentrajectory#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/abhid1234/opentrajectory.git", "directory": "packages/capture" },
+  "bugs": { "url": "https://github.com/abhid1234/opentrajectory/issues" },
   "license": "MIT",
+  "publishConfig": { "access": "public" },
+  "engines": { "node": ">=18" },
   "comment": "dependencies is intentionally empty — the shipped SDK uses only Node built-ins (corp-airlock constraint). devDependencies are build/test tooling only.",
   "dependencies": {},
   "devDependencies": {

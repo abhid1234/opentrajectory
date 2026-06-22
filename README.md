@@ -10,7 +10,8 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 
 | Piece | Path | Status |
 |---|---|---|
-| **Format spec** (v0.1) | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) | ✅ |
+| **Format spec** (v0.1) + **machine-readable JSON Schema** | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) · [`schema/`](schema/opentrajectory-0.1.schema.json) | ✅ |
+| **CI validation** (zero-dep validator + reusable GitHub Action) | [`tools/ot-validate.mjs`](tools/ot-validate.mjs) · [`action.yml`](action.yml) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 47 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
@@ -34,6 +35,39 @@ node dist/cli.js validate run.ot.json
 ```
 
 See [`demo/README.md`](demo/README.md) for the full live-capture-hook setup.
+
+## Adopt it
+
+OpenTrajectory is meant to be emitted and validated by anyone — not just this repo.
+
+```bash
+# install the SDK + CLI (zero runtime deps)
+npm i -D @opentrajectory/capture        # then: npx ot validate traces/
+
+# validate trajectories with no install at all (single self-contained file)
+node tools/ot-validate.mjs traces/      # recurses for *.ot.json / *.ot.jsonl
+```
+
+**Gate conformance in CI** — drop the reusable Action into any repo:
+
+```yaml
+# .github/workflows/validate.yml
+on: [push, pull_request]
+jobs:
+  ot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: abhid1234/opentrajectory@main   # validates *.ot.json in the repo
+        with: { path: traces/ }
+```
+
+**Machine-readable schema** — point your editor or tooling at
+[`schema/opentrajectory-0.1.schema.json`](schema/opentrajectory-0.1.schema.json)
+(JSON Schema draft 2020-12) for autocomplete and validation. The zero-dep `ot validate`
+and this schema are kept in lockstep by a cross-check test, so the runtime validator and the
+published schema never drift. This repo dogfoods both on every push
+([`.github/workflows/validate.yml`](.github/workflows/validate.yml)).
 
 ## CLI
 

@@ -202,6 +202,34 @@ const flakyTransport = async (...a: [string, Record<string, string>, unknown]) =
 const retried = await judgeTrajectory(traj, { transport: flakyTransport, backoffBase: 0, maxRetries: 3 });
 ok("judge retries a transient failure", retried.diagnosis === "HARNESS" && calls === 2);
 
+// --- 8. standard surface: schema + standalone CI validator agree ------------
+console.log("standard");
+const repoRoot = join(here, "../../..");
+const { validate: validateMjs } = await import(join(repoRoot, "tools/ot-validate.mjs"));
+const schema = JSON.parse(readFileSync(join(repoRoot, "schema/opentrajectory-0.1.schema.json"), "utf8"));
+
+// the two validators (TS SDK + zero-dep CI .mjs) must agree, or CI and the SDK drift
+const cases: unknown[] = [example, traj, cx,
+  { ot_version: "0.1", trajectory_id: "t", harness: { name: "x" }, steps: [{ index: 0, role: "user" }], outcome: { status: "success" } },
+  42, { ot_version: "0.1", harness: { name: "x" }, steps: [], outcome: { status: "success" } }, // missing trajectory_id
+  { ot_version: "0.1", trajectory_id: "t", harness: { name: "x" }, steps: [{ index: 3, role: "user" }], outcome: { status: "success" } }, // bad index
+];
+let agree = true;
+for (const c of cases) if (validate(c).valid !== validateMjs(c).valid) agree = false;
+ok("SDK validator and zero-dep CI validator agree on all cases", agree);
+
+// the JSON Schema's required fields must match what the validators enforce (anti-drift)
+ok("schema top-level required matches spec §7", JSON.stringify([...schema.required].sort()) === JSON.stringify(["harness", "outcome", "ot_version", "steps", "trajectory_id"].sort()));
+ok("schema requires tool_call name/args/success", JSON.stringify(schema.$defs.step.properties.tool_call.required.sort()) === JSON.stringify(["args", "name", "success"]));
+ok("schema outcome.status enum matches", JSON.stringify(schema.$defs.outcome.properties.status.enum) === JSON.stringify(["success", "failure", "partial", "unknown"]));
+
+// every shipped example/demo validates under the standalone validator
+for (const rel of ["examples/hello.ot.json", "examples/hello-judged.ot.json", "bench/gold/gold.json"]) {
+  const docs = JSON.parse(readFileSync(join(repoRoot, rel), "utf8"));
+  const arr = Array.isArray(docs) ? docs : [docs];
+  ok(`all docs in ${rel} are conformant`, arr.every((d: unknown) => validateMjs(d).valid));
+}
+
 // --- summary ----------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);
