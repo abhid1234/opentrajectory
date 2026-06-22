@@ -3,38 +3,7 @@
 // (see docs/harness-emit-analysis.md §1a).
 import { OT_VERSION } from "./types.js";
 import type { Step, ToolCall, Trajectory, OutcomeStatus } from "./types.js";
-
-const MAX_RESULT_CHARS = 8000;
-
-// Secrets to redact from args/results before they leave the machine.
-const SECRET_RE =
-  /(sk-[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_\-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----)/g;
-
-function redact(s: string): { text: string; redacted: boolean } {
-  let redacted = false;
-  const text = s.replace(SECRET_RE, () => {
-    redacted = true;
-    return "[REDACTED]";
-  });
-  return { text, redacted };
-}
-
-function truncate(s: string): string {
-  return s.length > MAX_RESULT_CHARS ? s.slice(0, MAX_RESULT_CHARS) + "\n…[truncated]" : s;
-}
-
-function asText(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((b) =>
-        b && typeof b === "object" && "text" in b ? String((b as { text: unknown }).text ?? "") : "",
-      )
-      .filter(Boolean)
-      .join("\n");
-  }
-  return "";
-}
+import { redact, truncate, asText } from "./redact.js";
 
 type RawEvent = Record<string, any>;
 

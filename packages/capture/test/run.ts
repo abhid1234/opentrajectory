@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { validate } from "../src/validate.js";
 import { captureFromTranscript, fromClaudeCode } from "../src/from-claude-code.js";
+import { captureFromRollout, looksLikeCodex } from "../src/from-codex.js";
 import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
 import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
@@ -119,6 +120,34 @@ ok("hook builds a tool_call step", hookStep.tool_call?.name === "Read");
 ok("hook infers success", hookStep.tool_call?.success === true);
 const hookFail = stepFromPayload({ tool_name: "Bash", tool_input: {}, tool_response: { content: "boom", is_error: true } });
 ok("hook infers failure", hookFail.tool_call?.success === false);
+
+// --- 6b. Codex rollout adapter ----------------------------------------------
+console.log("from-codex");
+const rollout = [
+  JSON.stringify({ timestamp: "2026-06-22T00:00:00Z", type: "session_meta", payload: { id: "cx1", cwd: "/repo", cli_version: "0.80.0" } }),
+  JSON.stringify({ timestamp: "2026-06-22T00:00:01Z", type: "event_msg", payload: { type: "user_message", message: "Fix the failing build.", images: [] } }),
+  JSON.stringify({ timestamp: "2026-06-22T00:00:02Z", type: "response_item", payload: { type: "message", role: "assistant", content: [{ type: "output_text", text: "I'll run the build." }] } }),
+  JSON.stringify({ timestamp: "2026-06-22T00:00:03Z", type: "response_item", payload: { type: "function_call", name: "shell_command", arguments: '{"command":"make"}', call_id: "call_1" } }),
+  JSON.stringify({ timestamp: "2026-06-22T00:00:04Z", type: "response_item", payload: { type: "function_call_output", call_id: "call_1", output: "Exit code: 2\nOutput:\nmake: *** No rule to make target. Stop." } }),
+  JSON.stringify({ timestamp: "2026-06-22T00:00:05Z", type: "response_item", payload: { type: "reasoning", summary: [], content: null, encrypted_content: "gAAAA…" } }),
+].join("\n");
+
+const cx = captureFromRollout(rollout);
+ok("codex output is conformant", validate(cx).valid, JSON.stringify(validate(cx).errors));
+ok("harness is codex-cli", cx.harness.name === "codex-cli");
+ok("carried cli_version", cx.harness.version === "0.80.0");
+ok("captured the shell_command call", cx.steps.some((s) => s.tool_call?.name === "shell_command"));
+ok("parsed structured args", cx.steps.find((s) => s.tool_call)?.tool_call?.args.command === "make");
+ok("Exit code: 2 -> success=false", cx.steps.find((s) => s.tool_call)?.tool_call?.success === false);
+ok("non-zero exit -> outcome failure", cx.outcome.status === "failure");
+ok("task from clean user_message", (cx.task?.description || "").includes("Fix the failing build"));
+ok("skipped encrypted reasoning item", !cx.steps.some((s) => JSON.stringify(s).includes("encrypted")));
+ok("detects codex rollout", looksLikeCodex(rollout) === true);
+ok("does not misdetect claude transcript", looksLikeCodex(transcript) === false);
+
+// cross-harness invariant: both adapters emit the SAME shape the Inspector reads
+const cxMsgs = toMessages(cx);
+ok("codex -> messages round-trips", cxMsgs.messages.some((m) => m.tool_calls?.[0]?.function.name === "shell_command"));
 
 // --- 7. judge: prompt, parse, full run via injected transport ---------------
 console.log("judge");

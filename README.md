@@ -12,12 +12,12 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 |---|---|---|
 | **Format spec** (v0.1) | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, Claude Code adapter + live hook) | [`packages/capture/`](packages/capture/) | ✅ 35 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 47 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) | ✅ |
 | **Inspector reads the native format + verdict** | [`inspector/`](inspector/) | ✅ 8 tests |
 | **Wedge demo** (live run → emit → audit) | [`demo/`](demo/) | ✅ |
 
-v1 = Claude Code adapter only. Codex / Gemini / LangGraph adapters and a hosted trajectory registry are v2 (the emit shapes are already characterized in the analysis doc). The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
+v1 ships **two capture adapters — Claude Code and Codex CLI** — both verified first-hand against real on-disk sessions, both reading into one format the same Inspector audits (the cross-harness proof). Gemini/LangGraph adapters and a hosted trajectory registry are next (their emit shapes are already characterized in the analysis doc). The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
 ## Quick start
 
@@ -37,7 +37,7 @@ See [`demo/README.md`](demo/README.md) for the full live-capture-hook setup.
 ## CLI
 
 ```
-ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]   capture from a Claude Code transcript
+ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages
 ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge
@@ -66,9 +66,9 @@ GEMINI_API_KEY=… ot judge run.ot.json   # fills outcome.verdict in place
 ## Tests
 
 ```bash
-# SDK (validator, parser, redaction, round-trip, hook, judge) — 35 tests
+# SDK (validators, both adapters, redaction, round-trip, hook, judge) — 47 tests
 cd packages/capture && node --import tsx test/run.ts
-# Inspector ingestion path (native OT -> Context-Gap diagnosis) — 8 tests, plain node
+# Inspector ingestion path (native OT, both harnesses, Context-Gap diagnosis) — 12 tests, plain node
 node inspector/test-ingest.mjs
 ```
 

@@ -33,9 +33,17 @@ Assistant messages also carry `message.usage` (input/output/cache tokens, per-it
 
 > **Implication for OpenTrajectory:** Claude Code is the ideal first adapter. The transcript gives a reliable post-hoc source; the `PostToolUse` hook gives live capture. v1 capture SDK targets both.
 
-### 1b. OpenAI Codex CLI — *(characterized, not first-hand here)*
+### 1b. OpenAI Codex CLI — VERIFIED (first-hand, this machine) · adapter SHIPPED
 
-Codex CLI persists **session "rollout" files** as JSONL under `~/.codex/sessions/…/rollout-*.jsonl`. Each line is a `ResponseItem` from the OpenAI **Responses API** schema — i.e. `message`, `function_call` (`name`, `arguments` as a JSON string, `call_id`), and `function_call_output` (`call_id`, `output`). Ordering is line order; success is implicit in the `output` (no first-class boolean). So Codex emits the same *spine* (ordered model turns + tool calls + outputs) but in OpenAI's item vocabulary, with no explicit per-step success flag or verdict. A converter maps `function_call`/`function_call_output` pairs → OpenTrajectory steps.
+Codex CLI (v0.80.0) persists **session "rollout" files** as JSONL under `~/.codex/sessions/<yyyy>/<mm>/<dd>/rollout-*.jsonl`. Each line is `{timestamp, type, payload}`. Verified top-level `type` values: `session_meta` (one; `{id, cwd, cli_version, instructions}`), `response_item` (the trajectory spine), `event_msg` (UI events incl. the clean `user_message`), `turn_context`.
+
+The spine is in `type:"response_item"`, whose `payload.type` is one of:
+- **`message`** — `{role:"user"|"assistant", content:[{type:"input_text"|"output_text", text}]}`
+- **`function_call`** — `{name, arguments (JSON string), call_id}`
+- **`function_call_output`** — `{call_id, output}` where `output` begins `Exit code: N\n…` (N=0 ⇒ success — the success signal)
+- **`reasoning`** — encrypted/empty; skipped.
+
+So Codex emits the same *spine* (ordered turns + tool calls + outputs) in OpenAI's Responses-item vocabulary; per-step success is recoverable from the `Exit code:` prefix. The shipped adapter (`packages/capture/src/from-codex.ts`) pairs `function_call`/`function_call_output` by `call_id`, reads success from the exit code, and emits `harness.name = "codex-cli"`. **Verified on a real 141-line rollout → 24-step conformant OpenTrajectory file**, read by the same Inspector as Claude Code (the cross-harness proof).
 
 ### 1c. Google Antigravity / Gemini CLI — *(characterized)*
 
@@ -50,8 +58,8 @@ LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` wit
 
 | Harness | On-disk artifact | Tool call shape | Explicit success? | Cost/tokens | Portable open format? |
 |---|---|---|---|---|---|
-| **Claude Code** | transcript JSONL + hooks | `tool_use`/`tool_result` blocks | yes (`is_error`) | yes (`usage`) | no |
-| **Codex CLI** | `rollout-*.jsonl` | Responses `function_call`(+`_output`) | no (implicit) | partial | no (OpenAI item shape) |
+| **Claude Code** | transcript JSONL + hooks | `tool_use`/`tool_result` blocks | yes (`is_error`) | yes (`usage`) | no — **adapter shipped** |
+| **Codex CLI** | `rollout-*.jsonl` | Responses `function_call`(+`_output`) | via `Exit code:` | partial | no — **adapter shipped** |
 | **Gemini/Antigravity** | checkpoints + OTel | OTel span / UI artifact | via span status | via OTel | no |
 | **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no (LangSmith-bound) |
 

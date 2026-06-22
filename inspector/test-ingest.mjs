@@ -9,7 +9,10 @@ import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, "app.js"), "utf8");
-const demo = JSON.parse(readFileSync(join(here, "demo.ot.json"), "utf8"));
+const demoRaw = JSON.parse(readFileSync(join(here, "demo.ot.json"), "utf8"));
+const demoAll = Array.isArray(demoRaw) ? demoRaw : [demoRaw];
+const demo = demoAll.find((d) => d.harness?.name === "claude-code") || demoAll[0];
+const demoCodex = demoAll.find((d) => d.harness?.name === "codex-cli");
 
 let pass = 0, fail = 0;
 const ok = (n, c, d) => (c ? (pass++, console.log("  ✓ " + n)) : (fail++, console.error("  ✗ " + n + (d ? " — " + d : ""))));
@@ -56,6 +59,15 @@ ok("resolved=false carried from outcome", t.resolved === false);
 const d = api.diagnoseLocal(t);
 ok("diagnoses a context/harness failure", d.diagnosis === "HARNESS" || d.category === "Context Gap", d.diagnosis + "/" + d.category);
 ok("evidence cites a missing-context marker", d.evidence.some((e) => /No module|No such file|Permission denied/i.test(e)), JSON.stringify(d.evidence));
+
+// cross-harness: a Codex-captured trajectory ingests through the SAME path
+if (demoCodex) {
+  const c = api.normalizeLocal(demoCodex, 1);
+  ok("codex trajectory ingests via same Inspector path", c.trajectory_id.startsWith("local-ot-"));
+  ok("codex harness surfaced", c.ot && c.ot.harness === "codex-cli");
+  ok("codex tool call captured (shell_command)", c.messages.some((m) => m.tools?.[0]?.name === "shell_command"));
+  ok("codex success -> heuristic CLEAN", api.diagnoseLocal(c).diagnosis === "CLEAN");
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

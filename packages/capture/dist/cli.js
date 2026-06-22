@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // OpenTrajectory capture CLI. Zero runtime dependencies (node built-ins only).
 //
-//   ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]   post-hoc capture from a Claude Code transcript
+//   ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
 //   ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 //   ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages (Inspector input)
 //   ot judge <file.ot.json> [-o out] [--model M] [--dry-run]    fill outcome.verdict via the reference judge (Gemini)
 //   ot hook                                                      live PostToolUse hook (reads stdin)
 import { readFileSync, writeFileSync } from "node:fs";
 import { captureFromTranscript } from "./from-claude-code.js";
+import { captureFromRollout, looksLikeCodex } from "./from-codex.js";
 import { validate } from "./validate.js";
 import { toMessages } from "./to-messages.js";
 import { runHook } from "./hook.js";
@@ -41,13 +42,19 @@ function main() {
     if (cmd === "capture") {
         const input = rest.find((a) => !a.startsWith("-"));
         if (!input)
-            return fail("usage: ot capture <transcript.jsonl> [-o out.ot.json] [--id ID]");
-        const traj = captureFromTranscript(readFileSync(input, "utf8"), { trajectoryId: arg(["--id"], rest) });
+            return fail("usage: ot capture <file.jsonl> [-o out.ot.json] [--id ID] [--harness claude-code|codex]");
+        const text = readFileSync(input, "utf8");
+        const id = arg(["--id"], rest);
+        const forced = arg(["--harness"], rest);
+        const harness = forced || (looksLikeCodex(text) ? "codex" : "claude-code");
+        const traj = harness === "codex" || harness === "codex-cli"
+            ? captureFromRollout(text, { trajectoryId: id })
+            : captureFromTranscript(text, { trajectoryId: id });
         const out = arg(["-o", "--out"], rest);
         const json = JSON.stringify(traj, null, 2);
         if (out) {
             writeFileSync(out, json);
-            console.error(`wrote ${traj.steps.length} steps -> ${out} (status: ${traj.outcome.status})`);
+            console.error(`[${traj.harness.name}] wrote ${traj.steps.length} steps -> ${out} (status: ${traj.outcome.status})`);
         }
         else {
             process.stdout.write(json + "\n");

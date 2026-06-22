@@ -729,3 +729,9 @@ body {
 
 /* import "yours" pill keeps the signal identity inside the workspace */
 .tnav.local { border-left:2px solid var(--signal-dim); }
+
+/* cross-harness badge on a trajectory card (OpenTrajectory) */
+.tnav .t-mark.harness {
+  background:var(--mast); color:var(--signal); border:1px solid rgba(182,240,0,0.35);
+  font-size:8.5px; letter-spacing:0.04em; margin-right:5px; text-transform:lowercase;
+}

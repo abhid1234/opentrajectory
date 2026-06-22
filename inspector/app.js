@@ -139,7 +139,7 @@ function _railItem(c) {
   const b = document.createElement("button");
   b.className = "tnav" + (c.local ? " local" : "") + (state.cur === c.trajectory_id ? " active" : "");
   const judgeBits = c.local
-    ? `<span class="t-mark loc">⬆ YOURS</span><span class="t-x" title="remove (stays only in this tab anyway)">×</span>`
+    ? `${c.harness ? `<span class="t-mark harness" title="source harness">${esc(c.harness)}</span>` : ""}<span class="t-mark loc">⬆ YOURS</span><span class="t-x" title="remove (stays only in this tab anyway)">×</span>`
     : `<span class="t-vs">vs</span>` +
       `<span class="dot" style="background:var(--d-${esc(c.judge_diagnosis || "CLEAN")})" title="judge"></span>` +
       `<span class="t-mark ${c.agree ? "agr" : "dis"}">${c.agree ? "agree" : "disagree"}</span>`;
@@ -779,8 +779,10 @@ function addLocalTrajectory(raw, i) {
   state.index.unshift({
     trajectory_id: t.trajectory_id, task_id: t.task_id, repo: t.repo,
     heuristic_diagnosis: t.heuristic.diagnosis, heuristic_category: t.heuristic.category,
-    judge_diagnosis: null, judge_category: null, agree: false,
+    judge_diagnosis: t.judge && t.judge.diagnosis ? t.judge.diagnosis : null,
+    judge_category: t.judge && t.judge.category ? t.judge.category : null, agree: false,
     n_messages: t.messages.length, offending_index: null, fork: null, local: true,
+    harness: t.ot ? t.ot.harness : null, // OpenTrajectory: source harness, for the cross-harness badge
   });
   return t;
 }
