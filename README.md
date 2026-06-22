@@ -14,13 +14,13 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **CI validation** (zero-dep validator + reusable GitHub Action) | [`tools/ot-validate.mjs`](tools/ot-validate.mjs) · [`action.yml`](action.yml) | ✅ |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 47 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 80 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (labeled gold set, heuristic-vs-judge correction rate) | [`bench/`](bench/) | ✅ heuristic 11/14 |
-| **Inspector reads the native format + verdict** | [`inspector/`](inspector/) | ✅ 12 tests |
+| **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
 | **Wedge demo + self-improvement loop demo** | [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
-v1 ships **two capture adapters — Claude Code and Codex CLI** — both verified first-hand against real on-disk sessions, both reading into one format the same Inspector audits (the cross-harness proof). Gemini/LangGraph adapters and a hosted trajectory registry are next (their emit shapes are already characterized in the analysis doc). The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
+v1 ships **three capture adapters — Claude Code, Codex CLI, and Gemini CLI** — all verified first-hand against real on-disk sessions, all reading into one format the same Inspector audits (the cross-harness proof). A LangGraph adapter and a hosted trajectory registry are next (their emit shapes are already characterized in the analysis doc). The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
 ## Quick start
 
@@ -85,7 +85,7 @@ published schema never drift. This repo dogfoods both on every push
 ## CLI
 
 ```
-ot capture <file.jsonl> [-o out] [--id ID] [--harness H]   capture from Claude Code OR Codex (auto-detected)
+ot capture <file> [-o out] [--id ID] [--harness H]         capture from Claude Code / Codex / Gemini (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages
 ot to-otel <file.ot.json> [-o out.json]                     convert to OpenTelemetry GenAI spans (OTLP/JSON)
@@ -123,9 +123,9 @@ exactly the ambiguous reward-hack cases an LLM that reads the trace is meant to 
 ## Tests
 
 ```bash
-# SDK (validators, both adapters, redaction, round-trip, hook, heuristic, judge) — 51 tests
+# SDK (validators, 3 adapters, redaction, round-trip, hook, heuristic, judge, otel) — 80 tests
 cd packages/capture && node --import tsx test/run.ts
-# Inspector ingestion path (native OT, both harnesses, Context-Gap diagnosis) — 12 tests, plain node
+# Inspector ingestion path (native OT, 3 harnesses, diagnosis) — 15 tests, plain node
 node inspector/test-ingest.mjs
 # Judge benchmark — heuristic accuracy now; add --judge with a key
 node --import tsx bench/score.ts

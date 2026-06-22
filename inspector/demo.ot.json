@@ -31,5 +31,20 @@
     ],
     "outcome": { "status": "success", "resolved": true },
     "metadata": { "note": "Captured via @opentrajectory/capture from a Codex CLI rollout (illustrative demo fixture)." }
+  },
+  {
+    "ot_version": "0.1",
+    "trajectory_id": "demo-gemini-cli-product",
+    "harness": { "name": "gemini-cli" },
+    "task": { "task_id": "fix-pagination", "description": "Fix the off-by-one in paginate() so the test passes.", "repo": "acme/web" },
+    "steps": [
+      { "index": 0, "role": "user", "message": { "text": "Fix the off-by-one in paginate() so the test passes." } },
+      { "index": 1, "role": "assistant", "tool_call": { "id": "read_file-1", "name": "read_file", "args": { "file_path": "src/paginate.ts" }, "result": "export function paginate(page, size) { const start = page * size; ... }", "success": true } },
+      { "index": 2, "role": "assistant", "tool_call": { "id": "replace-1", "name": "replace", "args": { "file_path": "src/paginate.ts", "old": "page * size", "new": "(page - 1) * size" }, "result": "Modified src/paginate.ts", "success": true } },
+      { "index": 3, "role": "assistant", "tool_call": { "id": "run-1", "name": "run_shell_command", "args": { "command": "npm test paginate" }, "result": "AssertionError: expected 20 items, got 19", "success": false } },
+      { "index": 4, "role": "assistant", "message": { "text": "Still off by one at the boundary — my fix wasn't right." } }
+    ],
+    "outcome": { "status": "failure", "resolved": false },
+    "metadata": { "note": "Captured via @opentrajectory/capture from a Gemini CLI session (illustrative demo fixture). No env error, no gamed reward — a genuine logic gap (PRODUCT)." }
   }
 ]

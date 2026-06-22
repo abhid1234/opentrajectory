@@ -13,6 +13,7 @@ const demoRaw = JSON.parse(readFileSync(join(here, "demo.ot.json"), "utf8"));
 const demoAll = Array.isArray(demoRaw) ? demoRaw : [demoRaw];
 const demo = demoAll.find((d) => d.harness?.name === "claude-code") || demoAll[0];
 const demoCodex = demoAll.find((d) => d.harness?.name === "codex-cli");
+const demoGemini = demoAll.find((d) => d.harness?.name === "gemini-cli");
 
 let pass = 0, fail = 0;
 const ok = (n, c, d) => (c ? (pass++, console.log("  ✓ " + n)) : (fail++, console.error("  ✗ " + n + (d ? " — " + d : ""))));
@@ -67,6 +68,14 @@ if (demoCodex) {
   ok("codex harness surfaced", c.ot && c.ot.harness === "codex-cli");
   ok("codex tool call captured (shell_command)", c.messages.some((m) => m.tools?.[0]?.name === "shell_command"));
   ok("codex success -> heuristic CLEAN", api.diagnoseLocal(c).diagnosis === "CLEAN");
+}
+
+// cross-harness: three harnesses through the one Inspector
+if (demoGemini) {
+  const g = api.normalizeLocal(demoGemini, 2);
+  ok("gemini harness surfaced", g.ot && g.ot.harness === "gemini-cli");
+  ok("gemini tool call captured (run_shell_command)", g.messages.some((m) => m.tools?.some((t) => t.name === "run_shell_command")));
+  ok("gemini genuine-failure -> heuristic PRODUCT", api.diagnoseLocal(g).diagnosis === "PRODUCT");
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

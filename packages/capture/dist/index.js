@@ -3,6 +3,7 @@ export * from "./types.js";
 export { validate, assertValid } from "./validate.js";
 export { parseTranscript, fromClaudeCode, captureFromTranscript } from "./from-claude-code.js";
 export { parseRollout, fromCodex, captureFromRollout, looksLikeCodex } from "./from-codex.js";
+export { fromGemini, captureFromGeminiSession, looksLikeGemini } from "./from-gemini.js";
 export { redact, truncate, asText } from "./redact.js";
 export { diagnoseHeuristic } from "./heuristic.js";
 export { toOtel } from "./to-otel.js";

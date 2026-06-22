@@ -45,9 +45,9 @@ The spine is in `type:"response_item"`, whose `payload.type` is one of:
 
 So Codex emits the same *spine* (ordered turns + tool calls + outputs) in OpenAI's Responses-item vocabulary; per-step success is recoverable from the `Exit code:` prefix. The shipped adapter (`packages/capture/src/from-codex.ts`) pairs `function_call`/`function_call_output` by `call_id`, reads success from the exit code, and emits `harness.name = "codex-cli"`. **Verified on a real 141-line rollout → 24-step conformant OpenTrajectory file**, read by the same Inspector as Claude Code (the cross-harness proof).
 
-### 1c. Google Antigravity / Gemini CLI — *(characterized)*
+### 1c. Gemini CLI — VERIFIED (first-hand, this machine) · adapter SHIPPED · (Antigravity characterized)
 
-- **Gemini CLI** (open source) writes session/chat **checkpoints** as JSON and supports **OpenTelemetry** export (traces/metrics/logs) for tool calls and model requests. The OTel path is observability-shaped (spans), not a portable trajectory artifact.
+- **Gemini CLI** writes each chat as a **single JSON session object** at `~/.gemini/tmp/<hash>/chats/session-*.json`: `{ sessionId, startTime, lastUpdated, messages[] }`. Verified `messages[].type` values: `user`, `gemini` (assistant), `info` (UI notices, skipped). A `gemini` message may carry `toolCalls[]` = `{ id, name, args, result }` where `result` is `[{ functionResponse: { response: { output | error } } }]` (success = no `error`), plus a `tokens` object `{ input, output, cached, thoughts, tool, total }`. So Gemini emits the same spine in *yet another* shape — and unlike Codex (JSONL), the whole session is one JSON document. The shipped adapter (`packages/capture/src/from-gemini.ts`) maps it to `harness.name = "gemini-cli"`, recovers per-tool success from `response.error`, and sums tokens into `cost`. **Verified on real sessions, from a 6-step run up to a 1008-message session → 1858 conformant steps.** (Gemini also supports OTel export — observability-shaped spans, complementary to this portable artifact; OpenTrajectory now bridges the other way via `ot to-otel`.)
 - **Antigravity** (Google's agentic IDE) surfaces "Artifacts"/task trajectories in its own UI but exposes **no documented, vendor-neutral trajectory file format**. Capture would lean on the OTel export or UI artifacts.
 
 ### 1d. LangGraph / LangChain (+ LangSmith) — *(characterized)*
@@ -60,7 +60,7 @@ LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` wit
 |---|---|---|---|---|---|
 | **Claude Code** | transcript JSONL + hooks | `tool_use`/`tool_result` blocks | yes (`is_error`) | yes (`usage`) | no — **adapter shipped** |
 | **Codex CLI** | `rollout-*.jsonl` | Responses `function_call`(+`_output`) | via `Exit code:` | partial | no — **adapter shipped** |
-| **Gemini/Antigravity** | checkpoints + OTel | OTel span / UI artifact | via span status | via OTel | no |
+| **Gemini CLI** | session JSON (`messages[]`) | `toolCalls[]` (+`functionResponse`) | via `response.error` | yes (`tokens`) | no — **adapter shipped** |
 | **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no (LangSmith-bound) |
 
 **Every harness records the same spine — ordered steps, tool name, args, result, (usually) success — in four mutually incompatible vocabularies, none of which is a portable artifact designed for evaluation.** That incompatibility is the gap OpenTrajectory fills.

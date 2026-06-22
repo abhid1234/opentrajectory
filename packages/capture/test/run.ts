@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { validate } from "../src/validate.js";
 import { captureFromTranscript, fromClaudeCode } from "../src/from-claude-code.js";
 import { captureFromRollout, looksLikeCodex } from "../src/from-codex.js";
+import { captureFromGeminiSession, looksLikeGemini } from "../src/from-gemini.js";
 import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
 import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
@@ -150,6 +151,33 @@ ok("does not misdetect claude transcript", looksLikeCodex(transcript) === false)
 // cross-harness invariant: both adapters emit the SAME shape the Inspector reads
 const cxMsgs = toMessages(cx);
 ok("codex -> messages round-trips", cxMsgs.messages.some((m) => m.tool_calls?.[0]?.function.name === "shell_command"));
+
+// --- 6b2. Gemini CLI adapter -------------------------------------------------
+console.log("from-gemini");
+const gSession = JSON.stringify({
+  sessionId: "gx1", startTime: "2026-06-22T00:00:00Z", lastUpdated: "2026-06-22T00:00:05Z",
+  messages: [
+    { id: "1", type: "user", timestamp: "2026-06-22T00:00:00Z", content: "Read config.ts and run the tests." },
+    { id: "2", type: "info", timestamp: "2026-06-22T00:00:01Z", content: "/some ui notice" },
+    { id: "3", type: "gemini", timestamp: "2026-06-22T00:00:02Z", content: "I'll read the file.", tokens: { input: 100, output: 20 },
+      toolCalls: [{ id: "read_file-1", name: "read_file", args: { file_path: "config.ts" }, result: [{ functionResponse: { response: { output: "export const x = 1" } } }] }] },
+    { id: "4", type: "gemini", timestamp: "2026-06-22T00:00:03Z", content: "", tokens: { input: 50, output: 10 },
+      toolCalls: [{ id: "run-1", name: "run_shell_command", args: { command: "npm test" }, result: [{ functionResponse: { response: { error: "1 test failed" } } }] }] },
+  ],
+});
+const gx = captureFromGeminiSession(gSession);
+ok("gemini output is conformant", validate(gx).valid, JSON.stringify(validate(gx).errors));
+ok("harness is gemini-cli", gx.harness.name === "gemini-cli");
+ok("skipped info message", !gx.steps.some((s) => JSON.stringify(s).includes("ui notice")));
+ok("captured read_file tool", gx.steps.some((s) => s.tool_call?.name === "read_file"));
+ok("extracted functionResponse output", gx.steps.find((s) => s.tool_call?.name === "read_file")?.tool_call?.result?.includes("export const x"));
+ok("response.error -> success=false", gx.steps.find((s) => s.tool_call?.name === "run_shell_command")?.tool_call?.success === false);
+ok("error tool -> outcome failure", gx.outcome.status === "failure");
+ok("summed gemini tokens", gx.cost?.input_tokens === 150 && gx.cost?.output_tokens === 30);
+ok("task from first user message", (gx.task?.description || "").includes("Read config.ts"));
+ok("detects gemini session", looksLikeGemini(gSession) === true);
+ok("gemini detector rejects codex JSONL", looksLikeGemini(rollout) === false);
+ok("codex detector rejects gemini object", looksLikeCodex(gSession) === false);
 
 // --- 6c. heuristic diagnoser (offline, no key) ------------------------------
 console.log("heuristic");
