@@ -1,27 +1,32 @@
-# The loop demo — a diagnosis driving a self-improvement turn
+# The loop demo — diagnoses steering a multi-turn self-improvement loop
 
-The recursive-self-improvement story in one runnable turn. An agent run fails; an
-OpenTrajectory **diagnosis** says *why*; that *why* tells you **which lever to pull**;
-you pull it; the next run passes.
+Recursive self-improvement in a runnable arc. The **same task** is attempted three times;
+each turn fails for a **different reason**; the OpenTrajectory **diagnosis** names which lever
+to pull; you pull it; the loop **converges** to success.
 
 ```bash
 bash demo/loop/run.sh        # offline (heuristic) — no API key
 ```
 
-## The turn
+## The arc
 
-1. **Turn 1 fails** — `1-fail.ot.json`: the agent can't import `jwt`; the package index is unreachable.
-2. **Diagnose** — `ot diagnose 1-fail.ot.json` → **HARNESS (Context Gap)**. The signal isn't "the model is bad" — it's "the *environment* withheld a dependency."
-3. **Targeted fix** — because the diagnosis is HARNESS, you fix the **harness** (provision `jwt`), not the model or the agent. The diagnosis chose the lever.
-4. **Turn 2 passes** — `2-pass.ot.json`: same task, same model, only the harness changed → **CLEAN, resolved**.
+| Turn | What happened | Diagnosis | Lever the diagnosis chose |
+|---|---|---|---|
+| 1 | Can't import `jwt`; index unreachable | **HARNESS** (Context Gap) | Fix the **environment** — provision the dependency. *Not* the model. |
+| 2 | Now it runs, but the fix is wrong | **PRODUCT** (capability gap) | Improve the **model's context** — point it at the real bug (the refresh path). |
+| 3 | Tests pass, resolved | **CLEAN** | None. The loop converged. |
+
+`HARNESS → PRODUCT → CLEAN` — three different failures, three different fixes, one task.
 
 ## Why it matters
 
-A self-improvement loop is only as good as the signal that steers it. "Pass rate dropped"
-tells you nothing about *what to change*. **"This failure is HARNESS, not TRAINING"** tells you
-to fix the sandbox instead of burning a fine-tuning run on a model that was never the problem.
-OpenTrajectory captures the trace in an open format; the diagnosis (heuristic here, the LLM
-`ot judge` for higher precision — see [`../../bench`](../../bench)) turns it into that steering signal.
+A pass/fail score is the same shape on turn 1 and turn 2 — both are "failed." It cannot tell
+you *what to change*, so it can't steer improvement. The diagnosis can: **"this is HARNESS, not
+PRODUCT"** is the difference between `pip install` and a wasted fine-tuning run; **"this is
+PRODUCT, not TRAINING"** is the difference between giving the model context and corrupting your
+reward. That per-turn *why* is the steering signal a self-improvement loop runs on — and it's
+exactly what OpenTrajectory captures and the diagnosis (heuristic here, the LLM
+[`ot judge`](../../bench) for higher precision) turns into a decision.
 
-This demo uses the offline heuristic so it runs with no key. `ot judge` is the same step at
-higher precision; the [benchmark](../../bench) shows where it earns the upgrade.
+This demo uses the offline heuristic so it runs with no key. The
+[benchmark](../../bench) shows where the LLM judge earns the upgrade on the ambiguous cases.

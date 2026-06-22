@@ -1,30 +1,36 @@
 #!/usr/bin/env bash
-# One turn of the self-improvement loop, driven by an OpenTrajectory diagnosis.
-# Offline (heuristic) — no API key needed. The judge (ot judge) is the higher-precision
-# version of the same step. Run from the repo root: bash demo/loop/run.sh
+# A self-improvement loop, driven by OpenTrajectory diagnoses. Three turns on the
+# SAME task: each turn fails for a DIFFERENT reason, the diagnosis names the lever,
+# you pull it, and the loop converges to success. Offline (heuristic) — no API key.
+# The LLM `ot judge` is the higher-precision version of the diagnose step.
+# Run from the repo root: bash demo/loop/run.sh
 set -e
 OT="node packages/capture/dist/cli.js"
-here="demo/loop"
+d="demo/loop"
 
-echo "── Turn 1: the agent runs the task ───────────────────────────────"
-echo "task: make the auth test suite pass"
+turn () { # <file> <whatfailed> <fix>
+  echo "── Turn: $2"
+  echo "\$ ot diagnose $(basename "$1")"
+  $OT diagnose "$1" | sed 's/^/   /'
+  echo "   → fix the lever the diagnosis named: $3"
+  echo
+}
+
+echo "TASK (fixed across all turns): make the auth test suite pass"
+echo "═══════════════════════════════════════════════════════════════"
 echo
-echo "\$ ot diagnose 1-fail.ot.json"
-$OT diagnose "$here/1-fail.ot.json"
+turn "$d/1-harness.ot.json" "the run can't even start" \
+  "HARNESS → fix the ENVIRONMENT (provision the 'jwt' dependency), not the model."
+turn "$d/2-product.ot.json" "now it runs, but the fix is wrong" \
+  "PRODUCT → a model CAPABILITY gap. Give it the missing context (point it at the refresh path)."
+turn "$d/3-clean.ot.json" "resolved" \
+  "none — CLEAN. The loop converged."
+
+echo "═══════════════════════════════════════════════════════════════"
+echo "Convergence:  HARNESS → PRODUCT → CLEAN"
+echo "Levers pulled: fix the harness → improve the model's context → done"
 echo
-echo "→ Diagnosis is HARNESS (Context Gap): the ENVIRONMENT withheld the 'jwt'"
-echo "  dependency. The fix is NOT 'retrain the model' or 'edit the agent' —"
-echo "  it's 'provision the dependency in the harness.' The diagnosis tells you"
-echo "  WHICH lever to pull."
-echo
-echo "── Apply the targeted fix the diagnosis implies ──────────────────"
-echo "  (provision 'jwt' in the sandbox — a harness fix, not a model change)"
-echo
-echo "── Turn 2: re-run the SAME task with the SAME model ──────────────"
-echo "\$ ot diagnose 2-pass.ot.json"
-$OT diagnose "$here/2-pass.ot.json"
-echo
-echo "→ CLEAN, resolved. The loop closed: a trajectory exposed the failure,"
-echo "  the diagnosis pointed at the harness, the harness fix landed, and the"
-echo "  next trajectory passes. That feedback signal — *why* it failed, not just"
-echo "  *that* it failed — is what a self-improvement loop runs on."
+echo "The point: each turn failed for a DIFFERENT reason. A pass/fail score can't"
+echo "tell them apart — so it can't tell you what to change. The DIAGNOSIS can, and"
+echo "that's the steering signal a self-improvement loop runs on. Mis-attribute turn 1"
+echo "as a model problem and you burn a fine-tuning run on a missing 'pip install'."

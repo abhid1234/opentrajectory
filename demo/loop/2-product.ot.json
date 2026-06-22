@@ -1,0 +1,16 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "loop-t2-product",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "task_id": "ship-auth", "description": "Make the auth test suite pass.", "repo": "acme/api" },
+  "model": "claude-opus-4-8",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "Make the auth test suite pass." } },
+    { "index": 1, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pytest tests/test_auth.py" }, "result": "FAILED test_auth.py::test_expired_token - AssertionError: expected 401, got 200", "success": false } },
+    { "index": 2, "role": "assistant", "tool_call": { "name": "Edit", "args": { "file_path": "src/auth.py", "old_string": "if token.exp < now", "new_string": "if token.exp <= now" }, "result": "File updated.", "success": true } },
+    { "index": 3, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pytest tests/test_auth.py" }, "result": "FAILED test_auth.py::test_expired_token - AssertionError: expected 401, got 200", "success": false } },
+    { "index": 4, "role": "assistant", "message": { "text": "My boundary fix didn't change the behavior — the token isn't being re-validated on refresh. I'm not sure where the refresh path checks expiry." } }
+  ],
+  "outcome": { "status": "failure", "resolved": false },
+  "metadata": { "loop_turn": 2, "note": "Turn 2. The harness is fixed now (jwt installed) — the run executes. It still fails, but for a different reason: a genuine logic gap, not the environment." }
+}

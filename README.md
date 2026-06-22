@@ -117,8 +117,9 @@ GEMINI_API_KEY=… ot judge run.ot.json   # fills outcome.verdict in place
 set that scores the heuristic (offline) and the judge (with a key) and reports how many of the
 heuristic's mistakes the judge corrects. Today the offline heuristic scores **11/14**, missing
 exactly the ambiguous reward-hack cases an LLM that reads the trace is meant to catch. And
-[`demo/loop/`](demo/loop/) shows a diagnosis driving one full self-improvement turn
-(fail → diagnose HARNESS → fix the harness → pass).
+[`demo/loop/`](demo/loop/) shows diagnoses steering a multi-turn self-improvement loop that
+**converges** — same task, three turns, each failing for a different reason
+(HARNESS → PRODUCT → CLEAN), the diagnosis naming the lever each time.
 
 ## Tests
 

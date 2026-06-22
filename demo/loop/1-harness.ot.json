@@ -1,15 +1,14 @@
 {
   "ot_version": "0.1",
-  "trajectory_id": "loop-turn1-fail",
+  "trajectory_id": "loop-t1-harness",
   "harness": { "name": "claude-code", "version": "2.x" },
   "task": { "task_id": "ship-auth", "description": "Make the auth test suite pass.", "repo": "acme/api" },
   "model": "claude-opus-4-8",
   "steps": [
     { "index": 0, "role": "user", "message": { "text": "Make the auth test suite pass." } },
     { "index": 1, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pytest tests/test_auth.py" }, "result": "ImportError\nModuleNotFoundError: No module named 'jwt'", "success": false, "error": "ModuleNotFoundError: No module named 'jwt'" } },
-    { "index": 2, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pip install pyjwt" }, "result": "the package index is unreachable in this sandbox", "success": false } },
-    { "index": 3, "role": "assistant", "message": { "text": "Blocked: the 'jwt' dependency isn't installed and I can't reach the package index." } }
+    { "index": 2, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pip install pyjwt" }, "result": "the package index is unreachable in this sandbox", "success": false } }
   ],
   "outcome": { "status": "failure", "resolved": false },
-  "metadata": { "loop_turn": 1, "note": "Agent failed. The DIAGNOSIS decides what to fix next." }
+  "metadata": { "loop_turn": 1, "note": "Turn 1. Diagnosis decides the fix." }
 }

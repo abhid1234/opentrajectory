@@ -1,0 +1,15 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "loop-t3-clean",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "task_id": "ship-auth", "description": "Make the auth test suite pass.", "repo": "acme/api" },
+  "model": "claude-opus-4-8",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "Make the auth test suite pass. Hint: the refresh path in src/refresh.py re-issues tokens without re-checking expiry." } },
+    { "index": 1, "role": "assistant", "tool_call": { "name": "Read", "args": { "file_path": "src/refresh.py" }, "result": "def refresh(token): return issue(token.claims)  # no expiry check", "success": true } },
+    { "index": 2, "role": "assistant", "tool_call": { "name": "Edit", "args": { "file_path": "src/refresh.py", "old_string": "return issue(token.claims)", "new_string": "if token.exp <= now: raise Expired()\n    return issue(token.claims)" }, "result": "File updated.", "success": true } },
+    { "index": 3, "role": "assistant", "tool_call": { "name": "Bash", "args": { "command": "pytest tests/test_auth.py" }, "result": "12 passed in 0.3s", "success": true } }
+  ],
+  "outcome": { "status": "success", "resolved": true },
+  "metadata": { "loop_turn": 3, "note": "Turn 3. The PRODUCT diagnosis said the model lacked the context to find the real bug; giving it that context (the refresh path) closed the gap. Same task, now resolved." }
+}

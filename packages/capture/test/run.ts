@@ -231,6 +231,14 @@ const flakyTransport = async (...a: [string, Record<string, string>, unknown]) =
 const retried = await judgeTrajectory(traj, { transport: flakyTransport, backoffBase: 0, maxRetries: 3 });
 ok("judge retries a transient failure", retried.diagnosis === "HARNESS" && calls === 2);
 
+// --- 6d. loop demo converges HARNESS -> PRODUCT -> CLEAN ---------------------
+console.log("loop demo");
+const loopRoot = join(here, "../../..");
+const loopSeq = ["1-harness", "2-product", "3-clean"].map((n) =>
+  diagnoseHeuristic(JSON.parse(readFileSync(join(loopRoot, `demo/loop/${n}.ot.json`), "utf8"))).diagnosis,
+);
+ok("loop diagnosis sequence is HARNESS -> PRODUCT -> CLEAN", JSON.stringify(loopSeq) === JSON.stringify(["HARNESS", "PRODUCT", "CLEAN"]), loopSeq.join(" -> "));
+
 // --- 7b. OTel GenAI bridge --------------------------------------------------
 console.log("to-otel");
 const otel = toOtel(traj) as any;
