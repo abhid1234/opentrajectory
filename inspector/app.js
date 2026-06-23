@@ -93,7 +93,19 @@ async function boot() {
   }
   if (!haveData && !demoLoaded) return;
   let seen = false; try { seen = !!sessionStorage.getItem("rlta_seen"); } catch (e) {}
+  // OpenTrajectory hero on first visit of the standalone demo; the auditor landing
+  // only applies when a pre-baked corpus is loaded.
   if (haveData && !seen) showLanding();
+  else if (demoLoaded && !seen && !new URLSearchParams(location.search).has("nohero")) showHero();
+}
+
+function showHero() {
+  const h = $("#hero"); if (!h) return;
+  h.hidden = false; document.body.classList.add("hero-on");
+  const close = () => { h.hidden = true; document.body.classList.remove("hero-on"); try { sessionStorage.setItem("rlta_seen", "1"); } catch (e) {} };
+  const go = $("#hero-go"); if (go) go.onclick = close;
+  const x = $("#hero-x"); if (x) x.onclick = close;
+  h.onclick = (e) => { if (e.target === h) close(); };
 }
 
 function renderTop() {

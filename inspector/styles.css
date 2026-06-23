@@ -735,3 +735,56 @@ body {
   background:var(--mast); color:var(--signal); border:1px solid rgba(182,240,0,0.35);
   font-size:8.5px; letter-spacing:0.04em; margin-right:5px; text-transform:lowercase;
 }
+
+/* ---- first-visit hero (OpenTrajectory) ------------------------------------ */
+body.hero-on { overflow:hidden; }
+.hero {
+  position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:24px;
+  background:var(--mast);
+  background-image:radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size:16px 16px;
+  animation:hero-fade 0.4s ease;
+}
+@keyframes hero-fade { from { opacity:0; } to { opacity:1; } }
+.hero-card {
+  position:relative; max-width:680px; text-align:center; color:var(--mast-fg);
+  padding:8px 12px;
+}
+.hero-x {
+  position:absolute; top:-4px; right:-2px; background:none; border:none; color:var(--mast-soft);
+  font-size:22px; line-height:1; padding:6px; }
+.hero-x:hover { color:#fff; }
+.hero-k { font-family:var(--mono); font-size:10px; letter-spacing:0.24em; text-transform:uppercase; color:var(--signal-dim); }
+.hero-mark { display:block; margin:14px auto 6px; }
+.hero-mark svg { overflow:visible; }
+.hero-mark polyline {
+  fill:none; stroke:var(--signal); stroke-width:2.2; stroke-linejoin:round; stroke-linecap:round;
+  filter:drop-shadow(0 0 5px rgba(182,240,0,0.5));
+  stroke-dasharray:170; stroke-dashoffset:170; animation:ot-draw 1.6s cubic-bezier(.4,0,.1,1) forwards 0.3s;
+}
+.hero-mark .head { fill:var(--signal); filter:drop-shadow(0 0 6px rgba(182,240,0,0.85)); opacity:0; animation:ot-pulse 2.4s ease-in-out infinite 1.9s; }
+.hero-h {
+  font-family:var(--display); font-weight:600; font-size:34px; line-height:1.15; letter-spacing:-0.015em;
+  color:#fff; margin:10px 0 0;
+}
+.hero-h em { font-style:italic; color:var(--signal); }
+.hero-sub { font-family:var(--sans); font-size:15px; line-height:1.6; color:#aeb8c6; margin:16px auto 0; max-width:600px; }
+.hero-sub b { color:var(--mast-fg); font-weight:600; }
+.hero-sub code { font-family:var(--mono); font-size:13px; color:var(--signal); background:rgba(182,240,0,0.10); padding:0 4px; border-radius:3px; }
+.hero-flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:22px 0 4px; flex-wrap:wrap; }
+.hero-flow .hf { font-family:var(--mono); font-size:11px; letter-spacing:0.04em; color:var(--mast-fg);
+  border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:6px 11px; }
+.hero-flow .hf code { color:var(--signal); }
+.hero-flow .hf em { font-style:normal; color:var(--signal); }
+.hero-flow .ha { color:var(--signal-dim); font-family:var(--mono); }
+.hero-cta { display:flex; align-items:center; justify-content:center; gap:18px; margin-top:26px; }
+.hero-go {
+  font-family:var(--mono); font-size:13px; font-weight:700; padding:11px 22px;
+  background:var(--signal); color:#0d1117; border:1px solid var(--signal); border-radius:4px;
+  transition:box-shadow 0.18s ease;
+}
+.hero-go:hover { box-shadow:0 0 24px rgba(182,240,0,0.5); }
+.hero-link { font-family:var(--mono); font-size:12px; color:var(--signal-dim); text-decoration:none; border-bottom:1px solid rgba(182,240,0,0.3); }
+.hero-link:hover { color:var(--signal); }
+.hero-foot { font-family:var(--mono); font-size:10px; letter-spacing:0.06em; color:var(--mast-soft); margin-top:24px; }
+@media (max-width:560px){ .hero-h { font-size:26px; } .hero-sub { font-size:14px; } }
