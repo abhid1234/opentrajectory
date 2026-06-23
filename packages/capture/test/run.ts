@@ -7,6 +7,7 @@ import { validate } from "../src/validate.js";
 import { captureFromTranscript, fromClaudeCode } from "../src/from-claude-code.js";
 import { captureFromRollout, looksLikeCodex } from "../src/from-codex.js";
 import { captureFromGeminiSession, looksLikeGemini } from "../src/from-gemini.js";
+import { captureFromLangGraph, looksLikeLangGraph } from "../src/from-langgraph.js";
 import { toMessages } from "../src/to-messages.js";
 import { stepFromPayload } from "../src/hook.js";
 import { buildJudgePrompt, parseVerdict, judgeTrajectory, judgeAndFill } from "../src/judge.js";
@@ -178,6 +179,37 @@ ok("task from first user message", (gx.task?.description || "").includes("Read c
 ok("detects gemini session", looksLikeGemini(gSession) === true);
 ok("gemini detector rejects codex JSONL", looksLikeGemini(rollout) === false);
 ok("codex detector rejects gemini object", looksLikeCodex(gSession) === false);
+
+// --- 6b3. LangGraph adapter (documented schema, synthetic fixtures) ---------
+console.log("from-langgraph");
+const lgNested = JSON.stringify({
+  id: "root", trace_id: "tr1", run_type: "chain", name: "agent", start_time: "2026-06-23T00:00:00Z",
+  inputs: { input: "Look up the weather and summarize." }, outputs: { output: "done" },
+  child_runs: [
+    { id: "r1", run_type: "llm", name: "gpt", start_time: "2026-06-23T00:00:01Z", outputs: { generations: [[{ text: "I'll call the weather tool." }]] } },
+    { id: "r2", run_type: "tool", name: "get_weather", start_time: "2026-06-23T00:00:02Z", inputs: { city: "SF" }, outputs: { output: "62F foggy" }, error: null },
+    { id: "r3", run_type: "tool", name: "get_alerts", start_time: "2026-06-23T00:00:03Z", inputs: { city: "SF" }, outputs: null, error: "TimeoutError: alerts API unreachable" },
+  ],
+});
+const lg = captureFromLangGraph(lgNested);
+ok("langgraph output is conformant", validate(lg).valid, JSON.stringify(validate(lg).errors));
+ok("harness is langgraph", lg.harness.name === "langgraph");
+ok("llm run -> assistant message", lg.steps.some((s) => s.message?.text?.includes("weather tool")));
+ok("tool run -> tool_call with args/result", lg.steps.some((s) => s.tool_call?.name === "get_weather" && (s.tool_call!.args as any).city === "SF" && s.tool_call!.result?.includes("62F")));
+ok("tool error -> success=false", lg.steps.find((s) => s.tool_call?.name === "get_alerts")?.tool_call?.success === false);
+ok("error tool -> outcome failure", lg.outcome.status === "failure");
+ok("task from root chain inputs", (lg.task?.description || "").includes("weather"));
+ok("dfs preserves run order", lg.steps.findIndex((s) => s.tool_call?.name === "get_weather") < lg.steps.findIndex((s) => s.tool_call?.name === "get_alerts"));
+
+// flat-array export (sorted by start_time)
+const lgFlat = JSON.stringify([
+  { id: "a", run_type: "tool", name: "search", start_time: "2026-06-23T00:00:02Z", inputs: { q: "x" }, outputs: { output: "hit" } },
+  { id: "b", run_type: "tool", name: "open", start_time: "2026-06-23T00:00:01Z", inputs: { url: "y" }, outputs: { output: "ok" } },
+]);
+const lgF = captureFromLangGraph(lgFlat);
+ok("flat array sorts by start_time", lgF.steps[0].tool_call?.name === "open" && lgF.steps[1].tool_call?.name === "search");
+ok("detects langgraph run tree", looksLikeLangGraph(lgNested) === true && looksLikeLangGraph(lgFlat) === true);
+ok("langgraph detector rejects gemini object", looksLikeLangGraph(gSession) === false);
 
 // --- 6c. heuristic diagnoser (offline, no key) ------------------------------
 console.log("heuristic");

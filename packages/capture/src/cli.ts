@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { captureFromTranscript } from "./from-claude-code.js";
 import { captureFromRollout, looksLikeCodex } from "./from-codex.js";
 import { captureFromGeminiSession, looksLikeGemini } from "./from-gemini.js";
+import { captureFromLangGraph, looksLikeLangGraph } from "./from-langgraph.js";
 import { validate } from "./validate.js";
 import { toMessages } from "./to-messages.js";
 import { runHook } from "./hook.js";
@@ -51,17 +52,21 @@ function main(): void {
 
   if (cmd === "capture") {
     const input = rest.find((a) => !a.startsWith("-"));
-    if (!input) return fail("usage: ot capture <file> [-o out.ot.json] [--id ID] [--harness claude-code|codex|gemini]");
+    if (!input) return fail("usage: ot capture <file> [-o out.ot.json] [--id ID] [--harness claude-code|codex|gemini|langgraph]");
     const text = readFileSync(input, "utf8");
     const id = arg(["--id"], rest);
     const forced = arg(["--harness"], rest);
-    const harness = forced || (looksLikeGemini(text) ? "gemini" : looksLikeCodex(text) ? "codex" : "claude-code");
+    const harness =
+      forced ||
+      (looksLikeLangGraph(text) ? "langgraph" : looksLikeGemini(text) ? "gemini" : looksLikeCodex(text) ? "codex" : "claude-code");
     const traj =
-      harness === "gemini" || harness === "gemini-cli"
-        ? captureFromGeminiSession(text, { trajectoryId: id })
-        : harness === "codex" || harness === "codex-cli"
-          ? captureFromRollout(text, { trajectoryId: id })
-          : captureFromTranscript(text, { trajectoryId: id });
+      harness === "langgraph"
+        ? captureFromLangGraph(text, { trajectoryId: id })
+        : harness === "gemini" || harness === "gemini-cli"
+          ? captureFromGeminiSession(text, { trajectoryId: id })
+          : harness === "codex" || harness === "codex-cli"
+            ? captureFromRollout(text, { trajectoryId: id })
+            : captureFromTranscript(text, { trajectoryId: id });
     const out = arg(["-o", "--out"], rest);
     const json = JSON.stringify(traj, null, 2);
     if (out) {

@@ -50,9 +50,11 @@ So Codex emits the same *spine* (ordered turns + tool calls + outputs) in OpenAI
 - **Gemini CLI** writes each chat as a **single JSON session object** at `~/.gemini/tmp/<hash>/chats/session-*.json`: `{ sessionId, startTime, lastUpdated, messages[] }`. Verified `messages[].type` values: `user`, `gemini` (assistant), `info` (UI notices, skipped). A `gemini` message may carry `toolCalls[]` = `{ id, name, args, result }` where `result` is `[{ functionResponse: { response: { output | error } } }]` (success = no `error`), plus a `tokens` object `{ input, output, cached, thoughts, tool, total }`. So Gemini emits the same spine in *yet another* shape — and unlike Codex (JSONL), the whole session is one JSON document. The shipped adapter (`packages/capture/src/from-gemini.ts`) maps it to `harness.name = "gemini-cli"`, recovers per-tool success from `response.error`, and sums tokens into `cost`. **Verified on real sessions, from a 6-step run up to a 1008-message session → 1858 conformant steps.** (Gemini also supports OTel export — observability-shaped spans, complementary to this portable artifact; OpenTrajectory now bridges the other way via `ot to-otel`.)
 - **Antigravity** (Google's agentic IDE) surfaces "Artifacts"/task trajectories in its own UI but exposes **no documented, vendor-neutral trajectory file format**. Capture would lean on the OTel export or UI artifacts.
 
-### 1d. LangGraph / LangChain (+ LangSmith) — *(characterized)*
+### 1d. LangGraph / LangChain (+ LangSmith) — *(from documented schema)* · adapter SHIPPED (unverified)
 
-LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` with `run_type` (`llm` | `tool` | `chain` | `retriever`), `inputs`, `outputs`, `start_time`/`end_time`, `error`, and `parent_run_id` (nesting). This is the richest native model of the four — it has explicit error and parent fields — but it is **observability-first and tied to the LangSmith backend** for storage/visualization. The schema is documented via the LangSmith API; it is not positioned as a portable cross-harness artifact others emit.
+LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` with `run_type` (`llm` | `chat_model` | `tool` | `chain` | `retriever`), `inputs`, `outputs`, `start_time`/`end_time`, `error`, `parent_run_id`, and either nested `child_runs` or a flat list keyed by parent. This is the richest native model of the four — explicit error and parent fields — but it is **observability-first and tied to the LangSmith backend**. The shipped adapter (`packages/capture/src/from-langgraph.ts`) flattens both export shapes (nested DFS or flat sorted by `start_time`), maps `tool` runs → tool_calls (success from `error == null`), `llm`/`chat_model` runs → assistant messages, and the root `chain` → task; emits `harness.name = "langgraph"`.
+
+> **Honesty:** unlike the other three adapters, this one is **not first-hand verified** — there was no real LangGraph session on the build machine, so it's built from the documented LangSmith run shape and exercised with synthetic fixtures only. Treat it as provisional until validated against a real export.
 
 ### Cross-harness summary
 
@@ -61,7 +63,7 @@ LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` wit
 | **Claude Code** | transcript JSONL + hooks | `tool_use`/`tool_result` blocks | yes (`is_error`) | yes (`usage`) | no — **adapter shipped** |
 | **Codex CLI** | `rollout-*.jsonl` | Responses `function_call`(+`_output`) | via `Exit code:` | partial | no — **adapter shipped** |
 | **Gemini CLI** | session JSON (`messages[]`) | `toolCalls[]` (+`functionResponse`) | via `response.error` | yes (`tokens`) | no — **adapter shipped** |
-| **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no (LangSmith-bound) |
+| **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no — **adapter shipped (unverified)** |
 
 **Every harness records the same spine — ordered steps, tool name, args, result, (usually) success — in four mutually incompatible vocabularies, none of which is a portable artifact designed for evaluation.** That incompatibility is the gap OpenTrajectory fills.
 
