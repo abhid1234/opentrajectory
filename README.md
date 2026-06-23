@@ -129,11 +129,19 @@ The bench first exposed a systematic bias: the judge over-called genuine capabil
 TRAINING; *tried-and-wrong* = PRODUCT, *couldn't-run* = HARNESS" — not memorizing the cases it
 missed. That took the judge to 24/24.
 
-> **Honest caveat:** the fix was informed by this set's failures and re-measured on the **same**
-> set, so 24/24 is an **in-sample** result, not a held-out generalization claim. The fix is general
-> (definitions, not case lookups), which makes overfitting less likely — but the real test is new
-> labeled cases, which is the next benchmark iteration. The point stands: **a measurable eval is one
-> you can actually debug and improve**, which an opaque score is not. And
+**Held-out validation** (12 *new* cases the prompt fix never saw, weighted toward the bias direction):
+
+| | accuracy | PRODUCT→TRAINING bias |
+|---|---|---|
+| offline heuristic | 8/12 (66.7%) | — |
+| judge — fixed prompt, **held-out** | **11/12 (91.7%)** | **did not recur** (5/5 PRODUCT correct) |
+
+So the fix **generalizes** — it wasn't memorizing the gold set; the bias the bench found is genuinely
+gone on fresh cases. The single held-out miss is a *new* failure mode (it called a subtle
+"overwrite the expected fixture" hack CLEAN), caught honestly and queued for a later pass. The
+arc — **measure → find bias → principled fix → in-sample 24/24 → held-out 11/12** — is the whole
+point: **a measurable evaluator is one you can actually debug and improve**, which an opaque score
+is not. And
 [`demo/loop/`](demo/loop/) shows diagnoses steering a multi-turn self-improvement loop that
 **converges** — same task, three turns, each failing for a different reason
 (HARNESS → PRODUCT → CLEAN), the diagnosis naming the lever each time.

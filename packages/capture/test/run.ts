@@ -282,7 +282,7 @@ ok("schema requires tool_call name/args/success", JSON.stringify(schema.$defs.st
 ok("schema outcome.status enum matches", JSON.stringify(schema.$defs.outcome.properties.status.enum) === JSON.stringify(["success", "failure", "partial", "unknown"]));
 
 // every shipped example/demo validates under the standalone validator
-for (const rel of ["examples/hello.ot.json", "examples/hello-judged.ot.json", "bench/gold/gold.json"]) {
+for (const rel of ["examples/hello.ot.json", "examples/hello-judged.ot.json", "bench/gold/gold.json", "bench/gold/holdout.json"]) {
   const docs = JSON.parse(readFileSync(join(repoRoot, rel), "utf8"));
   const arr = Array.isArray(docs) ? docs : [docs];
   ok(`all docs in ${rel} are conformant`, arr.every((d: unknown) => validateMjs(d).valid));

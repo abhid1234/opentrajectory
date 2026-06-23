@@ -17,7 +17,10 @@ const OUT_TOK_USD = (120 / 1000) * 0.0003; // small JSON verdict, repo-conservat
 let spentEstUSD = 0;
 
 const here = dirname(fileURLToPath(import.meta.url));
-const gold = JSON.parse(readFileSync(join(here, "gold/gold.json"), "utf8")) as any[];
+// gold set + output are overridable so the same harness can score a held-out set
+const GOLD_PATH = process.env.OT_GOLD || join(here, "gold/gold.json");
+const RESULTS_PATH = process.env.OT_RESULTS || join(here, "results.md");
+const gold = JSON.parse(readFileSync(GOLD_PATH, "utf8")) as any[];
 const CLASSES = ["HARNESS", "TRAINING", "PRODUCT", "BOTH", "CLEAN"];
 const runJudge = process.argv.includes("--judge") || !!process.env.GEMINI_API_KEY;
 
@@ -109,13 +112,13 @@ async function main() {
   }
 
   const report = L.join("\n") + "\n";
-  writeFileSync(join(here, "results.md"), report);
+  writeFileSync(RESULTS_PATH, report);
 
   // console summary
   console.log(`heuristic: ${hm.correct}/${hm.n} = ${fmtPct(hm.acc)}`);
   if (jm) console.log(`judge: ${jm!.correct}/${jm!.n} = ${fmtPct(jm!.acc)} | corrected ${corrected}/${heuristicWrong} heuristic errors`);
   else console.log(`judge: skipped (set GEMINI_API_KEY)`);
-  console.log(`wrote bench/results.md`);
+  console.log("wrote " + RESULTS_PATH);
 }
 
 main();

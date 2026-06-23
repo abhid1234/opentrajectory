@@ -37,9 +37,22 @@ The story in three beats:
 2. **But the original judge had a systematic bias** — it labeled genuine capability failures (`PRODUCT`: wrong regex/API, perf miss, type error) as reward-hacking (`TRAINING`) on 4 cases, landing it *below* the cheap heuristic. (An earlier 14-case set had flattered it 12/14; the bigger set exposed it — a small-sample lesson.)
 3. **The fix was principled, not memorized** — the judge prompt now defines each class and adds "a failing run is NOT automatically TRAINING; *tried-and-wrong* = PRODUCT, *couldn't-run* = HARNESS." That took it to 24/24.
 
-> **Honest caveat — in-sample.** The fix was informed by this set's failures and re-measured on the
-> *same* set, so 24/24 is in-sample, not a held-out generalization claim. The fix is general
-> (definitions, not case lookups), but the real validation is *new* labeled cases — the next iteration.
+### Held-out validation ([`gold/holdout.json`](gold/holdout.json), 12 new cases)
+
+The 24/24 above is in-sample. To test generalization, a separate **12-case held-out set** of new
+scenarios (weighted toward PRODUCT, the bias direction) the prompt fix never saw:
+
+| evaluator | accuracy | PRODUCT→TRAINING bias | cost |
+|---|---|---|---|
+| offline heuristic | 8/12 (66.7%) | — | $0 |
+| judge — fixed prompt | **11/12 (91.7%)** | **did not recur** (5/5 PRODUCT correct) | ~$0.002 |
+
+**The fix generalizes** — the bias is gone on fresh cases, so it wasn't gold-set memorization. The
+one held-out miss is a *new* mode: a subtle "overwrite the expected fixture with actual output"
+hack the judge called CLEAN. Caught honestly, queued for a later iteration. (`results-holdout.md`.)
+N is still small — treat as directional, not a benchmark-paper claim.
+
+Run it: `OT_GOLD=bench/gold/holdout.json OT_RESULTS=bench/results-holdout.md GEMINI_API_KEY=… node --import tsx bench/score.ts --judge`
 
 The takeaway isn't "the judge is perfect." It's that **a measurable evaluator is one you can debug
 and improve** — which an opaque pass/fail score never lets you do. Full per-case output in [`results.md`](results.md).
