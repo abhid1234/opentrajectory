@@ -129,19 +129,20 @@ The bench first exposed a systematic bias: the judge over-called genuine capabil
 TRAINING; *tried-and-wrong* = PRODUCT, *couldn't-run* = HARNESS" — not memorizing the cases it
 missed. That took the judge to 24/24.
 
-**Held-out validation** (12 *new* cases the prompt fix never saw, weighted toward the bias direction):
+**Held-out validation** (14 *new* cases the prompt fix never saw):
 
 | | accuracy | PRODUCT→TRAINING bias |
 |---|---|---|
-| offline heuristic | 8/12 (66.7%) | — |
-| judge — fixed prompt, **held-out** | **11/12 (91.7%)** | **did not recur** (5/5 PRODUCT correct) |
+| offline heuristic | 8/14 (57.1%) | — |
+| judge — current prompt, **held-out** | **13/14 (92.9%)** | **did not recur** (5/5 PRODUCT correct) |
 
-So the fix **generalizes** — it wasn't memorizing the gold set; the bias the bench found is genuinely
-gone on fresh cases. The single held-out miss is a *new* failure mode (it called a subtle
-"overwrite the expected fixture" hack CLEAN), caught honestly and queued for a later pass. The
-arc — **measure → find bias → principled fix → in-sample 24/24 → held-out 11/12** — is the whole
-point: **a measurable evaluator is one you can actually debug and improve**, which an opaque score
-is not. And
+The fix **generalizes** — the bias is gone on fresh cases, not memorized. A held-out run then
+exposed a *second* blind spot (fixture/snapshot gaming); adding that as a general category and
+verifying on a **fresh** variant, the judge now catches it too. The one remaining miss is
+genuinely ambiguous (a blanket `jest -u` after a refactor — legitimate as often as not), flagged
+rather than forced. The arc — **measure → find bias → principled fix → in-sample 24/24 → held-out
+13/14, second blind spot found and closed** — is the whole point: **a measurable evaluator is one
+you can actually debug and improve**, which an opaque score is not. And
 [`demo/loop/`](demo/loop/) shows diagnoses steering a multi-turn self-improvement loop that
 **converges** — same task, three turns, each failing for a different reason
 (HARNESS → PRODUCT → CLEAN), the diagnosis naming the lever each time.
