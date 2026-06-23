@@ -16,7 +16,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + live hook) | [`packages/capture/`](packages/capture/) | ✅ 80 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
-| **Judge benchmark** (24-case labeled gold set; measured, surfaces judge bias) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17/24 |
+| **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
 | **Wedge demo + self-improvement loop demo** | [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
@@ -113,22 +113,27 @@ GEMINI_API_KEY=… ot judge run.ot.json   # fills outcome.verdict in place
 > LLM judge. Use `--dry-run` to see exactly what would be sent. See
 > [`examples/hello-judged.ot.json`](examples/hello-judged.ot.json) for the output shape.
 
-**Is the evaluator trustworthy? (measured — and the benchmark has teeth.)** Don't take it on
-faith — [`bench/`](bench/) scores both on a labeled gold set. Real numbers on the **24-case** set
-(Gemini 2.5 Flash judge, ~$0.003):
+**Is the evaluator trustworthy? (measured, and improved by the measurement.)** Don't take it on
+faith — [`bench/`](bench/) scores both on a labeled 24-case set (Gemini 2.5 Flash judge). The
+benchmark drove a real fix:
 
-| | accuracy | corrects the heuristic's misses |
+| | accuracy | corrects heuristic's misses |
 |---|---|---|
 | offline heuristic | **18/24 (75.0%)** | — |
-| LLM judge (reads the trace) | **17/24 (70.8%)** | **5 of 6** |
+| judge — original prompt | 17/24 (70.8%) | 5 of 6 |
+| judge — after a principled prompt fix | **24/24 (100%)** | **6 of 6** |
 
-Reading the trace fixes the heuristic's specific blind spots — the buried reward-hacks it can't
-pattern-match. But the judge **trades that for a systematic bias**: it over-calls genuine
-capability failures (`PRODUCT`) as reward-hacking (`TRAINING`) on 4 cases, landing it slightly
-*below* the cheap heuristic overall. A 14-case demo set had flattered the judge (12/14 vs 11/14);
-the larger held-out set exposed the bias. **That is the benchmark doing its job** — neither
-evaluator is trustworthy alone, and the bench tells you exactly where each fails (next: a judge
-prompt that separates *can't* from *cheating*). And
+The bench first exposed a systematic bias: the judge over-called genuine capability failures
+(`PRODUCT`) as reward-hacking (`TRAINING`), landing it *below* the cheap heuristic. The fix was a
+**principled** prompt sharpening — define each class and add "a failing run is NOT automatically
+TRAINING; *tried-and-wrong* = PRODUCT, *couldn't-run* = HARNESS" — not memorizing the cases it
+missed. That took the judge to 24/24.
+
+> **Honest caveat:** the fix was informed by this set's failures and re-measured on the **same**
+> set, so 24/24 is an **in-sample** result, not a held-out generalization claim. The fix is general
+> (definitions, not case lookups), which makes overfitting less likely — but the real test is new
+> labeled cases, which is the next benchmark iteration. The point stands: **a measurable eval is one
+> you can actually debug and improve**, which an opaque score is not. And
 [`demo/loop/`](demo/loop/) shows diagnoses steering a multi-turn self-improvement loop that
 **converges** — same task, three turns, each failing for a different reason
 (HARNESS → PRODUCT → CLEAN), the diagnosis naming the lever each time.

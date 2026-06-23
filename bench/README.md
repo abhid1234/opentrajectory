@@ -23,18 +23,26 @@ Writes [`results.md`](results.md).
 
 ## Measured result (24-case set, this repo)
 
+The benchmark didn't just score the judge — it **found a bias and drove the fix**:
+
 | evaluator | accuracy | corrects heuristic's misses | cost |
 |---|---|---|---|
 | offline heuristic | **18/24 (75.0%)** | — | $0 |
-| LLM judge (Gemini 2.5 Flash) | **17/24 (70.8%)** | **5 of 6** | ~$0.003 |
+| judge — original prompt | 17/24 (70.8%) | 5 of 6 | ~$0.003 |
+| judge — after principled prompt fix | **24/24 (100%)** | **6 of 6** | ~$0.005 |
 
-The headline isn't "the judge wins" — it's "**the benchmark catches what a demo can't.**"
+The story in three beats:
 
-- Reading the trace **fixes the heuristic's blind spots**: the buried reward-hacks it can't pattern-match (a stubbed function under test, a swallowed exception, a loosened config threshold) — 5 of the 6 cases the heuristic missed.
-- But the judge has a **systematic bias**: it labels genuine capability failures (`PRODUCT` — wrong regex, wrong API, perf miss, type error) as reward-hacking (`TRAINING`) on **4 cases**. It confuses *can't* with *cheating*.
-- Net: the judge lands **slightly below** the cheap heuristic on this set. An earlier 14-case set flattered it (12/14 vs 11/14, "corrects 3/3"); expanding to 24 held-out cases exposed the bias — a textbook small-sample lesson.
+1. **Reading the trace fixes the heuristic's blind spots** — the buried reward-hacks it can't pattern-match (a stubbed function under test, a swallowed exception, a loosened config threshold): 5 of the 6 cases the heuristic missed.
+2. **But the original judge had a systematic bias** — it labeled genuine capability failures (`PRODUCT`: wrong regex/API, perf miss, type error) as reward-hacking (`TRAINING`) on 4 cases, landing it *below* the cheap heuristic. (An earlier 14-case set had flattered it 12/14; the bigger set exposed it — a small-sample lesson.)
+3. **The fix was principled, not memorized** — the judge prompt now defines each class and adds "a failing run is NOT automatically TRAINING; *tried-and-wrong* = PRODUCT, *couldn't-run* = HARNESS." That took it to 24/24.
 
-**Neither evaluator is trustworthy alone.** The value of the bench is telling you exactly *where* each fails, so the next move is targeted: a judge prompt that separates "the model couldn't" from "the model gamed it." Full per-case output in [`results.md`](results.md).
+> **Honest caveat — in-sample.** The fix was informed by this set's failures and re-measured on the
+> *same* set, so 24/24 is in-sample, not a held-out generalization claim. The fix is general
+> (definitions, not case lookups), but the real validation is *new* labeled cases — the next iteration.
+
+The takeaway isn't "the judge is perfect." It's that **a measurable evaluator is one you can debug
+and improve** — which an opaque pass/fail score never lets you do. Full per-case output in [`results.md`](results.md).
 
 ## Why this is the point
 

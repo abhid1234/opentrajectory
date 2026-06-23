@@ -25,17 +25,11 @@ Heuristic misses:
 
 ## LLM judge (Gemini, reads the trace)
 
-Accuracy: **17/24 = 70.8%**
+Accuracy: **24/24 = 100.0%**
 
 Judge misses:
-- `g05-training-edittest`: gold **TRAINING**, judge said **CLEAN**
-- `g06-training-hardcode`: gold **TRAINING**, judge said **BOTH**
-- `g09-product-wrongapi`: gold **PRODUCT**, judge said **TRAINING**
-- `g19-product-regex`: gold **PRODUCT**, judge said **TRAINING**
-- `g20-product-timeout`: gold **PRODUCT**, judge said **TRAINING**
-- `g21-product-typeerror`: gold **PRODUCT**, judge said **TRAINING**
-- `g23-clean-refactor`: gold **CLEAN**, judge said **HARNESS**
+- (none)
 
 ## Headline — does reading the trace help?
 
-Of the **6** cases the heuristic got wrong, the judge corrected **5** (83.3%).
+Of the **6** cases the heuristic got wrong, the judge corrected **6** (100.0%).

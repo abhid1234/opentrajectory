@@ -199,7 +199,7 @@ ok("heuristic flags TRAINING on test-file edit", hHack.diagnosis === "TRAINING")
 
 // --- 7. judge: prompt, parse, full run via injected transport ---------------
 console.log("judge");
-ok("prompt embeds the 4-point taxonomy", buildJudgePrompt(traj).includes("HARNESS (broken environment)"));
+ok("prompt embeds the taxonomy + can't-vs-cheating rule", buildJudgePrompt(traj).includes("HARNESS") && buildJudgePrompt(traj).includes("NOT automatically TRAINING"));
 ok("prompt renders a tool step with success flag", /tool:Bash.*\[ERR\]/.test(buildJudgePrompt(traj)));
 ok("prompt includes the task", buildJudgePrompt(traj).includes("Fix the bug"));
 
