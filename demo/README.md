@@ -2,6 +2,24 @@
 
 The whole point of OpenTrajectory in one loop: **a running agent emits the open format, and the already-shipped Inspector reads it and tells you *why* the run failed** — no harness lock-in, no backend.
 
+## Watch it (recorded)
+
+[`wedge.cast`](wedge.cast) is a real ~20s asciinema recording of the whole wedge in one terminal — capture → validate → audit → the three-turn convergence loop:
+
+```bash
+asciinema play demo/wedge.cast        # replay locally
+agg demo/wedge.cast demo/wedge.gif    # optional: render to a GIF (needs asciinema-agg)
+```
+
+It's fully reproducible and contains no private data — it drives off a bundled, sanitized
+session fixture ([`wedge-session.jsonl`](wedge-session.jsonl)), not your real transcripts.
+Re-record or just run it live with:
+
+```bash
+bash demo/wedge.sh                                      # run the narrated demo
+asciinema rec --overwrite -c "bash demo/wedge.sh" demo/wedge.cast   # re-record
+```
+
 ## The 5-line version (post-hoc capture)
 
 ```bash

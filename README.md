@@ -18,7 +18,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
-| **Wedge demo + self-improvement loop demo** | [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
+| **Wedge demo** (recorded ~20s cast) **+ self-improvement loop demo** | [`demo/wedge.cast`](demo/wedge.cast) · [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
 v1 ships **four capture adapters**: Claude Code, Codex CLI, and Gemini CLI — all verified first-hand against real on-disk sessions — plus **LangGraph/LangSmith**, built from the documented run-tree schema and exercised with synthetic fixtures (flagged provisional, not yet validated against a real export). All read into one format the same Inspector audits (the cross-harness proof). A hosted trajectory registry is next. The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
