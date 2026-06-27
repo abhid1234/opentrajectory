@@ -1,0 +1,7 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-minimal-0001",
+  "harness": { "name": "claude-code" },
+  "steps": [],
+  "outcome": { "status": "unknown" }
+}

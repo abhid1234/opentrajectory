@@ -1,0 +1,31 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-redaction-0002",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "description": "Configure the deploy token, then push." },
+  "steps": [
+    {
+      "index": 0,
+      "role": "user",
+      "message": { "text": "Set GITHUB_TOKEN and push the branch." }
+    },
+    {
+      "index": 1,
+      "role": "assistant",
+      "tool_call": {
+        "id": "toolu_r1",
+        "name": "Bash",
+        "args": { "command": "export GITHUB_TOKEN=[REDACTED] && git push origin main" },
+        "result": "Branch 'main' set up to track remote branch. Everything up-to-date.",
+        "success": true,
+        "redacted": true
+      }
+    },
+    {
+      "index": 2,
+      "role": "assistant",
+      "message": { "text": "Pushed. The token was redacted at capture time.", "redacted": true }
+    }
+  ],
+  "outcome": { "status": "success", "resolved": true }
+}

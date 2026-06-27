@@ -1,6 +1,7 @@
 // Zero-dependency test runner for @opentrajectory/capture.
 // Run: node --import tsx test/run.ts
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { validate } from "../src/validate.js";
@@ -319,6 +320,12 @@ for (const rel of ["examples/hello.ot.json", "examples/hello-judged.ot.json", "b
   const arr = Array.isArray(docs) ? docs : [docs];
   ok(`all docs in ${rel} are conformant`, arr.every((d: unknown) => validateMjs(d).valid));
 }
+
+// the conformance corpus self-check (validates all cases + asserts each invariant + no orphans).
+// run as its own process so the single source of truth stays conformance/check.mjs.
+let corpusOk = true;
+try { execFileSync("node", [join(repoRoot, "conformance/check.mjs")], { stdio: "pipe" }); } catch { corpusOk = false; }
+ok("conformance corpus passes check.mjs (9 cases, invariants, no orphans)", corpusOk);
 
 // --- summary ----------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);

@@ -1,0 +1,20 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-harness-langgraph",
+  "harness": { "name": "langgraph", "version": "0.x" },
+  "task": { "description": "Tool call from a run tree (LangGraph/LangSmith shape: nested runs by run_type, a tool run with an error). PROVISIONAL: built from the documented run-tree schema, not a validated real export." },
+  "steps": [
+    { "index": 0, "role": "assistant", "message": { "text": "I'll call the weather tool." } },
+    {
+      "index": 1,
+      "role": "tool",
+      "tool_call": { "id": "r2", "name": "get_weather", "args": { "city": "SF" }, "result": "62F foggy", "success": true }
+    },
+    {
+      "index": 2,
+      "role": "tool",
+      "tool_call": { "id": "r3", "name": "get_alerts", "args": { "city": "SF" }, "success": false, "error": "TimeoutError: alerts API unreachable" }
+    }
+  ],
+  "outcome": { "status": "partial", "resolved": false }
+}

@@ -12,6 +12,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 |---|---|---|
 | **Format spec** (v0.1) + **machine-readable JSON Schema** | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) · [`schema/`](schema/opentrajectory-0.1.schema.json) | ✅ |
 | **CI validation** (zero-dep validator + reusable GitHub Action) | [`tools/ot-validate.mjs`](tools/ot-validate.mjs) · [`action.yml`](action.yml) | ✅ |
+| **Conformance corpus** (9 canonical cases + "validate-your-adapter" guide; rot-proof self-check) | [`conformance/`](conformance/) | ✅ |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
 | **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + LangGraph + live hook) | [`packages/capture/`](packages/capture/) | ✅ 93 tests |
@@ -48,6 +49,12 @@ npm i -D @opentrajectory/capture        # then: npx ot validate traces/
 # validate trajectories with no install at all (single self-contained file)
 node tools/ot-validate.mjs traces/      # recurses for *.ot.json / *.ot.jsonl
 ```
+
+**Writing an adapter for a new harness?** [`conformance/`](conformance/) is the proof harness —
+9 canonical documents (one per shape: minimal, redaction, failure, multi-tool, filled verdict,
+and one per harness). Make your emitter produce these shapes and pass `ot validate`, and you
+conform. A manifest + `check.mjs` keep each case honest (the redaction case *must* contain
+`[REDACTED]`, etc.) — the seed of the future trajectory registry.
 
 **Gate conformance in CI** — drop the reusable Action into any repo:
 
@@ -150,10 +157,12 @@ you can actually debug and improve**, which an opaque score is not. And
 ## Tests
 
 ```bash
-# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel) — 93 tests
+# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel, corpus) — 94 tests
 cd packages/capture && node --import tsx test/run.ts
 # Inspector ingestion path (native OT, 3 harnesses, diagnosis) — 15 tests, plain node
 node inspector/test-ingest.mjs
+# Conformance corpus — validate 9 canonical cases + assert invariants + no orphans, plain node
+node conformance/check.mjs
 # Judge benchmark — heuristic accuracy now; add --judge with a key
 node --import tsx bench/score.ts
 ```

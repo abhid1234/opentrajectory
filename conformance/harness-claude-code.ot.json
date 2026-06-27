@@ -1,0 +1,16 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-harness-claude-code",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "description": "Read a file (Claude Code shape: tool_use / tool_result, ids like toolu_*)." },
+  "model": "claude-opus-4-8",
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "Read config.json." } },
+    {
+      "index": 1,
+      "role": "assistant",
+      "tool_call": { "id": "toolu_c1", "name": "Read", "args": { "file_path": "config.json" }, "result": "{\n  \"port\": 8080\n}", "success": true }
+    }
+  ],
+  "outcome": { "status": "success", "resolved": true }
+}

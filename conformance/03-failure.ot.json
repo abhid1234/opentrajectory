@@ -1,0 +1,32 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-failure-0003",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "task_id": "auth-suite", "description": "Make the auth test suite pass." },
+  "model": "claude-opus-4-8",
+  "steps": [
+    {
+      "index": 0,
+      "role": "user",
+      "message": { "text": "Make pytest tests/test_auth.py pass." }
+    },
+    {
+      "index": 1,
+      "role": "assistant",
+      "tool_call": {
+        "id": "toolu_f1",
+        "name": "Bash",
+        "args": { "command": "pytest tests/test_auth.py -q" },
+        "result": "ImportError while importing test module 'tests/test_auth.py'.\nE   ModuleNotFoundError: No module named 'jwt'\n1 error in 0.04s",
+        "success": false,
+        "error": "ModuleNotFoundError: No module named 'jwt'"
+      }
+    },
+    {
+      "index": 2,
+      "role": "assistant",
+      "decision": { "text": "Blocked: the 'jwt' dependency is not installed in this environment.", "kind": "give_up" }
+    }
+  ],
+  "outcome": { "status": "failure", "resolved": false }
+}

@@ -1,0 +1,15 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-harness-codex-cli",
+  "harness": { "name": "codex-cli", "version": "0.80.0" },
+  "task": { "description": "Run a build (Codex shape: function_call / function_call_output, call_id, shell_command)." },
+  "steps": [
+    { "index": 0, "role": "user", "message": { "text": "Fix the failing build." } },
+    {
+      "index": 1,
+      "role": "assistant",
+      "tool_call": { "id": "call_1", "name": "shell_command", "args": { "command": "make" }, "result": "make: Nothing to be done for 'all'.", "success": true }
+    }
+  ],
+  "outcome": { "status": "success", "resolved": true }
+}

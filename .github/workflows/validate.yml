@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: "20"
       - name: Validate OpenTrajectory files
-        run: node tools/ot-validate.mjs examples demo inspector bench/gold
+        run: node tools/ot-validate.mjs examples demo inspector bench/gold conformance
+      - name: Conformance corpus self-check (validate + invariants + no orphans)
+        run: node conformance/check.mjs
 
   sdk-tests:
     runs-on: ubuntu-latest

@@ -1,0 +1,15 @@
+{
+  "ot_version": "0.1",
+  "description": "Canonical conformance corpus. Every file is a valid v0.1 OpenTrajectory document (spec §7). Each demonstrates one shape an adapter must get right. `must` are machine-checked invariants (conformance/check.mjs) so a case can never silently stop demonstrating what it claims.",
+  "cases": [
+    { "file": "01-minimal.ot.json", "demonstrates": "The floor: only the five required fields, zero steps, status unknown. The smallest conformant document.", "must": ["empty-steps", "status:unknown"] },
+    { "file": "02-redaction.ot.json", "demonstrates": "Secret redaction by construction: the value is replaced with [REDACTED] and the nearest redacted:true is set (spec §4).", "must": ["has-redacted-flag", "has-redacted-placeholder"] },
+    { "file": "03-failure.ot.json", "demonstrates": "A failed run: a tool_call with success:false + error, a give_up decision, outcome.status failure / resolved false.", "must": ["status:failure", "has-failed-tool", "has-decision"] },
+    { "file": "04-multi-tool.ot.json", "demonstrates": "A real multi-step run: a plan decision then several tool_calls (Grep -> Edit -> Bash), monotonic 0-based indexes, timing + cost.", "must": ["status:success", "tools>=3", "has-decision"] },
+    { "file": "05-verdict.ot.json", "demonstrates": "An evaluator-filled outcome.verdict (the eval-first field telemetry formats lack): diagnosis, confidence, offending_step_index, evaluator.", "must": ["status:success", "has-verdict"] },
+    { "file": "harness-claude-code.ot.json", "demonstrates": "Claude Code native shape normalized: tool_use/tool_result, toolu_* ids.", "must": ["harness:claude-code", "has-tool"] },
+    { "file": "harness-codex-cli.ot.json", "demonstrates": "Codex CLI native shape normalized: function_call/function_call_output, call_id, shell_command.", "must": ["harness:codex-cli", "has-tool"] },
+    { "file": "harness-gemini-cli.ot.json", "demonstrates": "Gemini CLI native shape normalized: typed log items, run_shell_command, token usage.", "must": ["harness:gemini-cli", "has-tool"] },
+    { "file": "harness-langgraph.ot.json", "demonstrates": "LangGraph/LangSmith run tree normalized: nested runs by run_type, a tool run carrying an error. PROVISIONAL (documented schema, not a validated real export).", "must": ["harness:langgraph", "has-tool", "has-failed-tool"] }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "ot_version": "0.1",
+  "trajectory_id": "conformance-multitool-0004",
+  "harness": { "name": "claude-code", "version": "2.x" },
+  "task": { "task_id": "fix-import", "description": "Fix the failing import in utils.py and verify." },
+  "model": "claude-opus-4-8",
+  "started_at": "2026-06-27T00:00:00Z",
+  "ended_at": "2026-06-27T00:00:31Z",
+  "steps": [
+    {
+      "index": 0,
+      "role": "user",
+      "message": { "text": "tests fail with 'cannot import name parse_date'. Fix it." }
+    },
+    {
+      "index": 1,
+      "role": "assistant",
+      "message": { "text": "I'll locate the symbol, fix the import, then re-run the tests." },
+      "decision": { "text": "Read source before editing", "kind": "plan" }
+    },
+    {
+      "index": 2,
+      "role": "assistant",
+      "tool_call": {
+        "id": "toolu_m1",
+        "name": "Grep",
+        "args": { "pattern": "def parse_date", "path": "src" },
+        "result": "src/dates.py:12:def parse_date(s):",
+        "success": true,
+        "duration_ms": 18
+      }
+    },
+    {
+      "index": 3,
+      "role": "assistant",
+      "tool_call": {
+        "id": "toolu_m2",
+        "name": "Edit",
+        "args": { "file_path": "src/utils.py", "old_string": "from .helpers import parse_date", "new_string": "from .dates import parse_date" },
+        "result": "File updated.",
+        "success": true
+      }
+    },
+    {
+      "index": 4,
+      "role": "assistant",
+      "tool_call": {
+        "id": "toolu_m3",
+        "name": "Bash",
+        "args": { "command": "pytest tests/test_utils.py -q" },
+        "result": "4 passed in 0.21s",
+        "success": true,
+        "duration_ms": 240
+      }
+    },
+    {
+      "index": 5,
+      "role": "assistant",
+      "message": { "text": "Fixed the import path (helpers -> dates); all 4 tests pass." }
+    }
+  ],
+  "outcome": { "status": "success", "resolved": true },
+  "cost": { "input_tokens": 2100, "output_tokens": 180 }
+}
