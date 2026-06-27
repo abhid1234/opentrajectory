@@ -44,12 +44,16 @@ See [`demo/README.md`](demo/README.md) for the full live-capture-hook setup.
 OpenTrajectory is meant to be emitted and validated by anyone — not just this repo.
 
 ```bash
-# install the SDK + CLI (zero runtime deps)
-npm i -D @opentrajectory/capture        # then: npx ot validate traces/
-
-# validate trajectories with no install at all (single self-contained file)
+# validate trajectories with zero install — single self-contained file, works today
 node tools/ot-validate.mjs traces/      # recurses for *.ot.json / *.ot.jsonl
+
+# the full SDK + CLI, from source (zero runtime deps)
+cd packages/capture && npm run build    # then: node dist/cli.js validate traces/
 ```
+
+> The npm package `@opentrajectory/capture` (so `npm i -D @opentrajectory/capture` / `npx ot …`)
+> is **publish-pending** — until then, use the zero-install validator above or the CLI from source
+> (`node packages/capture/dist/cli.js …`, shown as `ot …` throughout this README).
 
 **Writing an adapter for a new harness?** [`conformance/`](conformance/) is the proof harness —
 9 canonical documents (one per shape: minimal, redaction, failure, multi-tool, filled verdict,
