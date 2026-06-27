@@ -2,3 +2,10 @@ node_modules/
 *.log
 .DS_Store
 .gstack/
+.vercel
+.env
+.env.*
+
+# Internal working docs — never publish (operating instructions + status/strategy)
+CLAUDE.md
+STATUS.md

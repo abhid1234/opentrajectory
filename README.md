@@ -16,7 +16,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Registry** (static, zero-dep hub over the adapters + corpus; generated from the corpus, drift-guarded) | [`registry/`](registry/) | ✅ v2 seed |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini + LangGraph** adapters + live hook; LangGraph real-export validated) | [`packages/capture/`](packages/capture/) | ✅ 118 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini + LangGraph** adapters + live hook; LangGraph real-export validated, single-LLM) | [`packages/capture/`](packages/capture/) | ✅ 118 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
