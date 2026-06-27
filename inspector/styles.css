@@ -107,7 +107,8 @@ button { font-family:inherit; cursor:pointer; }
 /* ---- Inspector main ----------------------------------------------------- */
 .insp { display:flex; flex-direction:column; min-height:0; min-width:0; }
 
-.insp .hd { padding:14px 22px; border-bottom:1px solid var(--rule); background:var(--card); }
+.insp .hd { padding:14px 22px; border-bottom:1px solid var(--rule); background:var(--card);
+  position:sticky; top:0; z-index:5; }   /* keep the verdict pane pinned while stepping/walking the trace */
 .insp .hd .task { font-family:var(--display); font-weight:600; font-size:24px; letter-spacing:-0.01em; }
 .insp .hd .sub { font-family:var(--mono); font-size:11px; color:var(--ink-soft); display:flex; gap:16px; margin-top:3px; }
 .insp .hd .sub b { color:var(--ink); }
