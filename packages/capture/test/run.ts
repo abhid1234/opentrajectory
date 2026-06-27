@@ -293,6 +293,12 @@ ok("prompt embeds the taxonomy + can't-vs-cheating rule", buildJudgePrompt(traj)
 ok("prompt renders a tool step with success flag", /tool:Bash.*\[ERR\]/.test(buildJudgePrompt(traj)));
 ok("prompt includes the task", buildJudgePrompt(traj).includes("Fix the bug"));
 
+// regression: `ot judge` on a multi-trajectory file (array / .jsonl) must judge each doc,
+// not crash casting the whole array as one Trajectory (steps undefined -> TypeError).
+const demoArr = JSON.parse(readFileSync(join(here, "../../../inspector/demo.ot.json"), "utf8"));
+ok("inspector demo is a multi-trajectory array", Array.isArray(demoArr) && demoArr.length >= 2);
+ok("buildJudgePrompt works per-doc across an array", demoArr.every((t: any) => typeof buildJudgePrompt(t) === "string" && buildJudgePrompt(t).length > 50));
+
 const v1 = parseVerdict({ diagnosis: "harness", failure_category: "Context Gap", confidence: 0.9, reasoning: "missing dep", offending_step_index: 2 });
 ok("parse normalizes diagnosis to upper", v1.diagnosis === "HARNESS");
 ok("parse keeps human category", v1.category === "Context Gap");

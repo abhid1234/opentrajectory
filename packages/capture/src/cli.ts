@@ -127,28 +127,41 @@ function main(): void {
 
   if (cmd === "judge") {
     const input = rest.find((a) => !a.startsWith("-"));
-    if (!input) return fail("usage: ot judge <file.ot.json> [-o out] [--model M] [--dry-run]");
-    const traj = JSON.parse(readFileSync(input, "utf8")) as Trajectory;
+    if (!input) return fail("usage: ot judge <file.ot.json|.ot.jsonl> [-o out] [--model M] [--dry-run]");
+    const isJsonl = input.endsWith(".jsonl");
+    // handle single object, a JSON array, or .jsonl — judge each trajectory in the file
+    const docs = loadDocs(input) as Trajectory[];
+    if (!docs.length) return fail("no trajectories found in " + input);
+    const wasArray = isJsonl || /^\s*\[/.test(readFileSync(input, "utf8"));
     const model = arg(["--model"], rest);
 
     if (rest.includes("--dry-run")) {
-      const prompt = buildJudgePrompt(traj);
-      const c = estimateCost(prompt);
-      console.error(`[dry-run] ~${c.tokens} input tokens · ~$${c.usd.toFixed(5)} (no API call)\n`);
-      process.stdout.write(prompt + "\n");
+      let tokens = 0, usd = 0;
+      docs.forEach((t, i) => {
+        const c = estimateCost(buildJudgePrompt(t));
+        tokens += c.tokens; usd += c.usd;
+        if (i === 0) process.stdout.write(buildJudgePrompt(t) + "\n");
+      });
+      console.error(`[dry-run] ${docs.length} trajector${docs.length === 1 ? "y" : "ies"} · ~${tokens} input tokens · ~$${usd.toFixed(5)} total (no API call; prompt above is doc[0])`);
       return;
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return fail("GEMINI_API_KEY is not set (use --dry-run to preview the prompt without calling the API)");
-    judgeAndFill(traj, { apiKey, model })
-      .then((judged) => {
-        const out = arg(["-o", "--out"], rest) || input; // write back in place by default
-        writeFileSync(out, JSON.stringify(judged, null, 2));
-        const v = judged.outcome.verdict!;
-        console.error(`verdict: ${v.diagnosis} (${v.category}) · conf ${v.confidence} · step ${v.offending_step_index ?? "—"} -> ${out}`);
-      })
-      .catch((e) => fail(String(e?.message || e)));
+    (async () => {
+      const judged: Trajectory[] = [];
+      for (let i = 0; i < docs.length; i++) {
+        const j = await judgeAndFill(docs[i], { apiKey, model });
+        judged.push(j);
+        const v = j.outcome.verdict!;
+        const id = j.trajectory_id || j.task?.task_id || "—";
+        console.error(`[${i + 1}/${docs.length}] ${id}: ${v.diagnosis} (${v.category}) · conf ${v.confidence} · step ${v.offending_step_index ?? "—"}`);
+      }
+      const out = arg(["-o", "--out"], rest) || input; // write back in place by default
+      if (isJsonl) writeFileSync(out, judged.map((d) => JSON.stringify(d)).join("\n") + "\n");
+      else writeFileSync(out, JSON.stringify(wasArray ? judged : judged[0], null, 2));
+      console.error(`wrote ${judged.length} judged trajector${judged.length === 1 ? "y" : "ies"} -> ${out}`);
+    })().catch((e) => fail(String(e?.message || e)));
     return;
   }
 
