@@ -1,6 +1,12 @@
-# OpenTrajectory Format Specification — v0.1 (draft)
+# OpenTrajectory Format Specification — v0.1
 
-**Status:** Draft 0.1 · **Date:** 2026-06-22 · **License:** open (CC0 for the spec text; reference code MIT)
+**Status:** Stable 0.1 (frozen 2026-06-27) · **Date:** 2026-06-22 · **License:** open (CC0 for the spec text; reference code MIT)
+
+> **Stability promise.** v0.1 is frozen: the required fields and conformance rules (§7) will
+> not change under the `0.1` `ot_version`. Future versions are **additive-only** — new optional
+> fields may appear; a `0.1` document stays valid, and readers MUST ignore unknown fields
+> (`additionalProperties: true`). A breaking change bumps `ot_version` (e.g. `0.2`).
+> The [conformance corpus](../conformance/) and JSON Schema are the executable definition of this contract.
 
 OpenTrajectory is an **open, vendor-neutral file format** for capturing what an AI agent actually did during one run — the ordered steps, the tool calls (name / args / result / success), the decisions, and the final outcome — in a single portable JSON artifact that any harness can emit and any evaluation tool can read.
 
