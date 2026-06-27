@@ -256,6 +256,7 @@ function renderInspector() {
     ? `<span class="vmark q">vs</span>`
     : `<span class="vmark ${t.agree ? "agr" : "dis"}">${t.agree ? "✓ agree" : "✗ disagree"}</span>`;
   insp.innerHTML = `
+    <div class="pinhead">
     <div class="hd">
       <div class="task">${esc(t.task_id)}</div>
       <div class="sub"><span>repo <b>${esc(t.repo || "—")}</b></span><span>model <b>${esc(t.model || "—")}</b></span><span><b>${t.messages.length}</b> messages</span></div>
@@ -292,6 +293,7 @@ function renderInspector() {
         <button id="g-next" title="next moment">Next ›</button>
         <button id="g-walk" class="run" title="auto-play the key moments">▶ Walk me through it</button>
       </div>
+    </div>
     </div>
 
     <div class="stickybar"><div class="ctrl">
