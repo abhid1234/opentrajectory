@@ -5,6 +5,11 @@ type Run = Record<string, any>;
  *  `dotted_order`, or a flat list linked only by `parent_run_id`. Tree order is
  *  reconstructed (depth-first) rather than trusting wall-clock `start_time`. */
 export declare function flattenRuns(input: unknown): Run[];
+/** LangSmith ingestion batch shape: `{ post:[creates], patch:[updates] }`. Real exports from
+ *  the multipart ingest endpoint / wrap_openai arrive this way — `post` holds the run with its
+ *  inputs, `patch` carries the final outputs/end_time/error keyed by the same id. Merge them
+ *  back into a single run list (patch values win, except empties). Anything else passes through. */
+export declare function normalizeIngestBatch(input: unknown): unknown;
 /** Convert a parsed LangGraph/LangSmith run tree into one OpenTrajectory document. */
 export declare function fromLangGraph(input: unknown, opts?: {
     trajectoryId?: string;

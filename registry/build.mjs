@@ -16,7 +16,7 @@ const ADAPTERS = [
   { name: "claude-code", label: "Claude Code", status: "verified", native: "tool_use / tool_result, toolu_* ids", source: "packages/capture/src/from-claude-code.ts" },
   { name: "codex-cli", label: "Codex CLI", status: "verified", native: "function_call / function_call_output, call_id", source: "packages/capture/src/from-codex.ts" },
   { name: "gemini-cli", label: "Gemini CLI", status: "verified", native: "typed log items, run_shell_command", source: "packages/capture/src/from-gemini.ts" },
-  { name: "langgraph", label: "LangGraph / LangSmith", status: "provisional", native: "run tree (run_type); 3 export shapes", source: "packages/capture/src/from-langgraph.ts" },
+  { name: "langgraph", label: "LangGraph / LangSmith", status: "verified", native: "run tree (run_type); 4 export shapes incl. ingest batch", source: "packages/capture/src/from-langgraph.ts", note: "validated on real LangSmith exports (SDK wrap_openai fixtures, single-LLM); real multi-tool agent trace still synthetic" },
 ];
 
 const cases = manifest.cases.map((c) => {

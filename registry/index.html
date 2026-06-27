@@ -153,6 +153,7 @@ node registry/build.mjs           <span class="c"># regenerate this page's data<
         return '<div class="adapter">' +
           '<div class="nm">' + esc(a.label) + ' <span class="badge ' + a.status + '">' + a.status + '</span></div>' +
           '<div class="native">native: ' + esc(a.native) + '</div>' +
+          (a.note ? '<div class="native" style="color:var(--oxblood)">scope: ' + esc(a.note) + '</div>' : "") +
           '<div class="src"><a href="../' + esc(a.source) + '">' + esc(a.source) + '</a></div>' +
         '</div>';
       }).join("");

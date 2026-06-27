@@ -26,9 +26,10 @@ window.__REGISTRY__ = {
     {
       "name": "langgraph",
       "label": "LangGraph / LangSmith",
-      "status": "provisional",
-      "native": "run tree (run_type); 3 export shapes",
-      "source": "packages/capture/src/from-langgraph.ts"
+      "status": "verified",
+      "native": "run tree (run_type); 4 export shapes incl. ingest batch",
+      "source": "packages/capture/src/from-langgraph.ts",
+      "note": "validated on real LangSmith exports (SDK wrap_openai fixtures, single-LLM); real multi-tool agent trace still synthetic"
     }
   ],
   "cases": [
@@ -140,7 +141,7 @@ window.__REGISTRY__ = {
     },
     {
       "file": "harness-langgraph.ot.json",
-      "demonstrates": "LangGraph/LangSmith run tree normalized: nested runs by run_type, a tool run carrying an error. PROVISIONAL (documented schema, not a validated real export).",
+      "demonstrates": "LangGraph/LangSmith run tree normalized: nested runs by run_type, a tool run carrying an error. Adapter validated on real LangSmith exports (SDK wrap_openai fixtures, single-LLM); a real multi-tool agent trace is still synthetic-only.",
       "must": [
         "harness:langgraph",
         "has-tool",

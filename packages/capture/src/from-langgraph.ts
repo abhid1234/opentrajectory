@@ -1,17 +1,20 @@
 // LangGraph / LangChain run tree (LangSmith export) -> OpenTrajectory v0.1. Zero deps.
 //
-// PROVISIONAL — not yet validated against a real captured export. Unlike the Claude
-// Code / Codex / Gemini adapters (checked against real on-disk sessions), this is built
-// from the DOCUMENTED LangSmith run-tree shape and exercised with synthetic fixtures.
-// A LangSmith "Run" has: id, name, run_type (llm|chat_model|tool|chain|retriever|
-// prompt|parser), inputs, outputs, error, start_time, parent_run_id, dotted_order, and
-// either nested child_runs or a flat list. Tool runs carry the tool name/args/result;
-// llm runs carry the text. We handle the three real export shapes:
+// Validated against REAL serialized LangSmith exports (the SDK's wrap_openai integration-test
+// data — see test/fixtures/langsmith/). Single-LLM runs are confirmed end-to-end; a real
+// multi-tool AGENT trace (root chain + nested tool runs) is still exercised only with synthetic
+// fixtures, so the tool/tree paths are covered there, not yet against a captured real agent run.
+//
+// A LangSmith "Run" has: id, name, run_type (llm|chat_model|tool|chain|retriever|prompt|parser),
+// inputs, outputs, error, start_time, parent_run_id, dotted_order, and either nested child_runs
+// or a flat list. We handle the real export shapes:
 //   1. a nested root with `child_runs`               (RunTree.to_dict / single trace)
 //   2. a flat list ordered by `dotted_order`         (LangSmith canonical order field)
 //   3. a flat list linked only by `parent_run_id`    (the list-runs API endpoint)
-// reconstructing tree order in (2)/(3) rather than trusting wall-clock start_time.
-// See docs/harness-emit-analysis.md §1d and the validation checklist there.
+//   4. the `{ post:[...], patch:[...] }` ingest batch (multipart endpoint / wrap_openai) — merged by id
+// reconstructing tree order in (2)/(3) rather than trusting wall-clock start_time. LLM output is
+// read from LangChain `generations` OR raw OpenAI `choices[].message.content` (+ streaming deltas).
+// See docs/harness-emit-analysis.md §1d.
 import { OT_VERSION } from "./types.js";
 import type { Step, ToolCall, Trajectory, OutcomeStatus } from "./types.js";
 import { redact, truncate, asText } from "./redact.js";
@@ -80,6 +83,21 @@ function dfs(run: Run, out: Run[] = []): Run[] {
   return out;
 }
 
+/** Best-effort task description from a root run's inputs. Handles a chat `messages:[{role,content}]`
+ *  array (OpenAI/LangChain shape), an `input` field, or falls back to a stringified blob. */
+function taskFromInputs(inputs: unknown): string {
+  if (inputs == null) return "";
+  if (typeof inputs === "string") return inputs;
+  const o = inputs as any;
+  if (Array.isArray(o.messages)) {
+    const parts = o.messages
+      .map((m: any) => (typeof m === "string" ? m : asText(m?.content)))
+      .filter((t: unknown) => t != null && t !== "");
+    if (parts.length) return parts.join("\n");
+  }
+  return asText(o.input ?? o.messages ?? inputs);
+}
+
 function llmText(outputs: unknown): string {
   if (!outputs || typeof outputs !== "object") return asText(outputs);
   const o = outputs as any;
@@ -93,14 +111,50 @@ function llmText(outputs: unknown): string {
     }
     if (texts.length) return texts.join("\n");
   }
+  // wrap_openai / raw OpenAI completion shape: choices[].message.content (or .text)
+  if (Array.isArray(o.choices)) {
+    const texts = o.choices
+      .map((c: any) => c?.message?.content ?? c?.delta?.content ?? c?.text)
+      .filter((t: unknown) => t != null && t !== "")
+      .map((t: unknown) => asText(t));
+    if (texts.length) return texts.join("\n");
+  }
   if (o.output) return asText(o.output);
   if (o.content) return asText(o.content);
   return "";
 }
 
+/** LangSmith ingestion batch shape: `{ post:[creates], patch:[updates] }`. Real exports from
+ *  the multipart ingest endpoint / wrap_openai arrive this way — `post` holds the run with its
+ *  inputs, `patch` carries the final outputs/end_time/error keyed by the same id. Merge them
+ *  back into a single run list (patch values win, except empties). Anything else passes through. */
+export function normalizeIngestBatch(input: unknown): unknown {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  const o = input as any;
+  if (!Array.isArray(o.post)) return input;
+  const byId = new Map<string, Run>();
+  const order: string[] = [];
+  const take = (r: Run) => { if (r && r.id) { if (!byId.has(r.id)) order.push(r.id); byId.set(r.id, { ...(byId.get(r.id) || {}), ...emptyStripped(r) }); } };
+  for (const r of o.post) take(r);
+  for (const u of Array.isArray(o.patch) ? o.patch : []) take(u);
+  return order.map((id) => byId.get(id)!);
+}
+
+/** Drop null/undefined and {} values so a patch's real outputs override a post's empty `{}`. */
+function emptyStripped(r: Run): Run {
+  const out: Run = {};
+  for (const k of Object.keys(r)) {
+    const v = r[k];
+    if (v == null) continue;
+    if (typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
 /** Convert a parsed LangGraph/LangSmith run tree into one OpenTrajectory document. */
 export function fromLangGraph(input: unknown, opts: { trajectoryId?: string } = {}): Trajectory {
-  const runs = flattenRuns(input);
+  const runs = flattenRuns(normalizeIngestBatch(input));
   const steps: Step[] = [];
   const push = (s: Omit<Step, "index">) => steps.push({ index: steps.length, ...s });
 
@@ -124,6 +178,16 @@ export function fromLangGraph(input: unknown, opts: { trajectoryId?: string } = 
     if (usage) {
       inTok += Number(usage.prompt_tokens || usage.input_tokens || 0);
       outTok += Number(usage.completion_tokens || usage.output_tokens || 0);
+    }
+
+    // outcome resolution from the TRACE ROOT — its own trace root (id === trace_id) or a
+    // top-level chain. Works for agent traces (root chain) AND a bare root LLM run.
+    const isTraceRoot = r.id != null && (r.id === r.trace_id || (!r.parent_run_id && r.id === traceId));
+    if ((String(r.run_type) === "chain" || isTraceRoot) && !description) {
+      description = taskFromInputs(r.inputs);
+      const hasOut = r.outputs != null && (typeof r.outputs !== "object" || Object.keys(r.outputs).length > 0);
+      if (r.error == null && hasOut) rootResolved = true;
+      else if (r.error != null) rootResolved = false;
     }
 
     const type = String(r.run_type || "");
@@ -150,11 +214,6 @@ export function fromLangGraph(input: unknown, opts: { trajectoryId?: string } = 
         const red = redact(text);
         push({ role: "assistant", ts: r.start_time, message: { text: truncate(red.text), redacted: red.redacted || undefined } });
       }
-    } else if (type === "chain" && description === undefined) {
-      // top-level chain holds the task input + final resolution
-      description = asText(r.inputs?.input ?? r.inputs?.messages ?? r.inputs);
-      if (r.error == null && r.outputs != null) rootResolved = true;
-      else if (r.error != null) rootResolved = false;
     }
   }
 
@@ -189,7 +248,7 @@ export function captureFromLangGraph(json: string, opts?: { trajectoryId?: strin
 export function looksLikeLangGraph(text: string): boolean {
   try {
     const o = JSON.parse(text);
-    const probe = Array.isArray(o) ? o[0] : o?.runs?.[0] ?? o;
+    const probe = Array.isArray(o) ? o[0] : o?.runs?.[0] ?? o?.post?.[0] ?? o;
     return !!probe && typeof probe === "object" && typeof probe.run_type === "string";
   } catch {
     return false;

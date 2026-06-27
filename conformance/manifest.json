@@ -10,6 +10,6 @@
     { "file": "harness-claude-code.ot.json", "demonstrates": "Claude Code native shape normalized: tool_use/tool_result, toolu_* ids.", "must": ["harness:claude-code", "has-tool"] },
     { "file": "harness-codex-cli.ot.json", "demonstrates": "Codex CLI native shape normalized: function_call/function_call_output, call_id, shell_command.", "must": ["harness:codex-cli", "has-tool"] },
     { "file": "harness-gemini-cli.ot.json", "demonstrates": "Gemini CLI native shape normalized: typed log items, run_shell_command, token usage.", "must": ["harness:gemini-cli", "has-tool"] },
-    { "file": "harness-langgraph.ot.json", "demonstrates": "LangGraph/LangSmith run tree normalized: nested runs by run_type, a tool run carrying an error. PROVISIONAL (documented schema, not a validated real export).", "must": ["harness:langgraph", "has-tool", "has-failed-tool"] }
+    { "file": "harness-langgraph.ot.json", "demonstrates": "LangGraph/LangSmith run tree normalized: nested runs by run_type, a tool run carrying an error. Adapter validated on real LangSmith exports (SDK wrap_openai fixtures, single-LLM); a real multi-tool agent trace is still synthetic-only.", "must": ["harness:langgraph", "has-tool", "has-failed-tool"] }
   ]
 }

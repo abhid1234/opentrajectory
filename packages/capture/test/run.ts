@@ -244,6 +244,31 @@ const lgUsage = captureFromLangGraph(JSON.stringify({
 }));
 ok("usage_metadata tokens captured", lgUsage.cost?.input_tokens === 11 && lgUsage.cost?.output_tokens === 7);
 
+// ingestion-batch envelope { post, patch } — merge final outputs/end_time by id, parse OpenAI choices
+const lgBatch = captureFromLangGraph(JSON.stringify({
+  post: [{ id: "x", trace_id: "x", run_type: "llm", name: "ChatOpenAI", start_time: "2026-06-23T00:00:00Z",
+    inputs: { messages: [{ role: "user", content: "howdy" }] }, outputs: {} }],
+  patch: [{ id: "x", end_time: "2026-06-23T00:00:01Z", error: null,
+    outputs: { choices: [{ message: { role: "assistant", content: "Howdy! How can I help?" } }], usage_metadata: { input_tokens: 9, output_tokens: 9 } } }],
+}));
+ok("ingest batch is conformant", validate(lgBatch).valid, JSON.stringify(validate(lgBatch).errors));
+ok("ingest batch merges patch outputs -> openai choices text", lgBatch.steps.some((s) => s.message?.text?.includes("Howdy! How can I help")));
+ok("ingest batch task from chat messages", (lgBatch.task?.description || "") === "howdy");
+ok("ingest batch root resolves to success", lgBatch.outcome.status === "success" && lgBatch.outcome.resolved === true);
+ok("ingest batch tokens from usage_metadata", lgBatch.cost?.input_tokens === 9 && lgBatch.cost?.output_tokens === 9);
+ok("detects ingest-batch envelope as langgraph", looksLikeLangGraph(JSON.stringify({ post: [{ run_type: "llm" }] })) === true);
+
+// REAL exports: vendored verbatim from langchain-ai/langsmith-sdk wrap_openai test data.
+// These are genuine serialized LangSmith runs (see test/fixtures/langsmith/README.md) — the
+// proof the adapter consumes a real export, not just our synthetic fixtures.
+const lsDir = join(here, "fixtures/langsmith");
+for (const f of ["langsmith_py_wrap_openai_.json", "langsmith_py_wrap_openai_reasoning.json", "langsmith_py_wrap_openai_stream.json", "langsmith_py_wrap_openai_stream_no_usage.json"]) {
+  const real = captureFromLangGraph(readFileSync(join(lsDir, f), "utf8"));
+  ok(`real export ${f}: conformant`, validate(real).valid, JSON.stringify(validate(real).errors));
+  ok(`real export ${f}: detected as langgraph`, looksLikeLangGraph(readFileSync(join(lsDir, f), "utf8")) === true);
+  ok(`real export ${f}: extracts assistant text`, real.steps.some((s) => (s.message?.text || "").trim().length > 0));
+}
+
 // --- 6c. heuristic diagnoser (offline, no key) ------------------------------
 console.log("heuristic");
 const hCtx = diagnoseHeuristic({ ot_version: "0.1", trajectory_id: "h1", harness: { name: "x" },

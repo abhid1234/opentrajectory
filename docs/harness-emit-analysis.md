@@ -50,18 +50,29 @@ So Codex emits the same *spine* (ordered turns + tool calls + outputs) in OpenAI
 - **Gemini CLI** writes each chat as a **single JSON session object** at `~/.gemini/tmp/<hash>/chats/session-*.json`: `{ sessionId, startTime, lastUpdated, messages[] }`. Verified `messages[].type` values: `user`, `gemini` (assistant), `info` (UI notices, skipped). A `gemini` message may carry `toolCalls[]` = `{ id, name, args, result }` where `result` is `[{ functionResponse: { response: { output | error } } }]` (success = no `error`), plus a `tokens` object `{ input, output, cached, thoughts, tool, total }`. So Gemini emits the same spine in *yet another* shape — and unlike Codex (JSONL), the whole session is one JSON document. The shipped adapter (`packages/capture/src/from-gemini.ts`) maps it to `harness.name = "gemini-cli"`, recovers per-tool success from `response.error`, and sums tokens into `cost`. **Verified on real sessions, from a 6-step run up to a 1008-message session → 1858 conformant steps.** (Gemini also supports OTel export — observability-shaped spans, complementary to this portable artifact; OpenTrajectory now bridges the other way via `ot to-otel`.)
 - **Antigravity** (Google's agentic IDE) surfaces "Artifacts"/task trajectories in its own UI but exposes **no documented, vendor-neutral trajectory file format**. Capture would lean on the OTel export or UI artifacts.
 
-### 1d. LangGraph / LangChain (+ LangSmith) — *(from documented schema)* · adapter SHIPPED (unverified)
+### 1d. LangGraph / LangChain (+ LangSmith) · adapter SHIPPED · validated on real exports (single-LLM)
 
 LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` with `run_type` (`llm` | `chat_model` | `tool` | `chain` | `retriever`), `inputs`, `outputs`, `start_time`/`end_time`, `error`, `parent_run_id`, `dotted_order`, and either nested `child_runs` or a flat list. This is the richest native model of the four — explicit error and parent fields — but it is **observability-first and tied to the LangSmith backend**. The shipped adapter (`packages/capture/src/from-langgraph.ts`) handles the **three real export shapes** — nested `child_runs`, a flat list ordered by `dotted_order` (LangSmith's canonical order field), and a flat list linked only by `parent_run_id` (the list-runs API endpoint) — **reconstructing depth-first tree order** rather than trusting wall-clock `start_time`. It maps `tool` runs → tool_calls (success from `error == null`), `llm`/`chat_model` runs → assistant messages, the root `chain` → task; pulls token usage from legacy `llm_output.token_usage` *or* the newer `usage_metadata`; emits `harness.name = "langgraph"`.
 
-> **Honesty:** unlike the other three adapters, this one is **not first-hand verified** — there was no real LangGraph session on the build machine, so it's built from the documented LangSmith run shape and exercised with synthetic fixtures only. Treat it as provisional until validated against a real export.
+> **Honesty (updated):** the adapter is now **validated against real serialized LangSmith exports** —
+> the SDK's `wrap_openai` integration-test data, vendored at `packages/capture/test/fixtures/langsmith/`
+> (genuine ingest payloads, not hand-authored). All four capture → conformant end-to-end. The
+> **residual caveat**: those are real *single-LLM* runs; a real *multi-tool agent* trace (root chain +
+> nested tool runs) is still exercised only with synthetic fixtures, so the tool/tree paths are covered
+> there, not yet against a captured real agent run.
 
-**Validation checklist — to drop the "provisional" flag, run against one real export:**
-1. Capture a real run — `RunTree` → `.to_dict()` (nested), or `client.list_runs(...)` (flat, `parent_run_id`-linked), or a LangSmith UI trace export — into `real.json`.
-2. `node packages/capture/dist/cli.js capture real.json --harness langgraph -o real.ot.json`
-3. `node packages/capture/dist/cli.js validate real.ot.json` → conformant.
-4. Eyeball: step order matches the trace's visual tree; each `tool` run became a tool_call with the right name/args/result and `success`; the root task is populated; token totals are sane.
-5. If all four pass, replace "provisional/unverified" with "verified" in this section, the adapter header, the README, and the conformance manifest's `harness-langgraph` note. If anything is off, the gap is a real-shape the fixtures missed — add a fixture + fix, don't paper over it.
+**What the real exports changed.** Validating against real data did its job — it surfaced three shapes
+the synthetic fixtures missed, each now handled (with regression tests):
+1. the **`{ post:[...], patch:[...] }` ingest-batch envelope** (run created in `post`, final
+   outputs/`end_time`/`error` patched in by id) — merged back into one run list;
+2. LLM output as a raw **OpenAI `choices[].message.content`** (and streaming `delta.content`), not just
+   LangChain `generations`;
+3. a chat **`messages:[{role,content}]`** input as the task description.
+
+**To close the residual caveat** (a real multi-tool agent trace): capture one via `RunTree.to_dict()` or
+`client.list_runs(...)`, run `capture --harness langgraph` → `validate`, eyeball that each `tool` run
+became a tool_call with the right name/args/result/`success` and tree order matches, then drop the
+"single-LLM" qualifier here, in the adapter header, the README, and the registry note.
 
 ### Cross-harness summary
 
@@ -70,7 +81,7 @@ LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` wit
 | **Claude Code** | transcript JSONL + hooks | `tool_use`/`tool_result` blocks | yes (`is_error`) | yes (`usage`) | no — **adapter shipped** |
 | **Codex CLI** | `rollout-*.jsonl` | Responses `function_call`(+`_output`) | via `Exit code:` | partial | no — **adapter shipped** |
 | **Gemini CLI** | session JSON (`messages[]`) | `toolCalls[]` (+`functionResponse`) | via `response.error` | yes (`tokens`) | no — **adapter shipped** |
-| **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no — **adapter shipped (unverified)** |
+| **LangGraph** | LangSmith run tree | `Run(run_type=tool)` | yes (`error`) | yes | no — **adapter shipped · real-export validated (single-LLM)** |
 
 **Every harness records the same spine — ordered steps, tool name, args, result, (usually) success — in four mutually incompatible vocabularies, none of which is a portable artifact designed for evaluation.** That incompatibility is the gap OpenTrajectory fills.
 
