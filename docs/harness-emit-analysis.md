@@ -52,9 +52,16 @@ So Codex emits the same *spine* (ordered turns + tool calls + outputs) in OpenAI
 
 ### 1d. LangGraph / LangChain (+ LangSmith) — *(from documented schema)* · adapter SHIPPED (unverified)
 
-LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` with `run_type` (`llm` | `chat_model` | `tool` | `chain` | `retriever`), `inputs`, `outputs`, `start_time`/`end_time`, `error`, `parent_run_id`, and either nested `child_runs` or a flat list keyed by parent. This is the richest native model of the four — explicit error and parent fields — but it is **observability-first and tied to the LangSmith backend**. The shipped adapter (`packages/capture/src/from-langgraph.ts`) flattens both export shapes (nested DFS or flat sorted by `start_time`), maps `tool` runs → tool_calls (success from `error == null`), `llm`/`chat_model` runs → assistant messages, and the root `chain` → task; emits `harness.name = "langgraph"`.
+LangChain/LangGraph runs are modeled as a **run tree**: each node is a `Run` with `run_type` (`llm` | `chat_model` | `tool` | `chain` | `retriever`), `inputs`, `outputs`, `start_time`/`end_time`, `error`, `parent_run_id`, `dotted_order`, and either nested `child_runs` or a flat list. This is the richest native model of the four — explicit error and parent fields — but it is **observability-first and tied to the LangSmith backend**. The shipped adapter (`packages/capture/src/from-langgraph.ts`) handles the **three real export shapes** — nested `child_runs`, a flat list ordered by `dotted_order` (LangSmith's canonical order field), and a flat list linked only by `parent_run_id` (the list-runs API endpoint) — **reconstructing depth-first tree order** rather than trusting wall-clock `start_time`. It maps `tool` runs → tool_calls (success from `error == null`), `llm`/`chat_model` runs → assistant messages, the root `chain` → task; pulls token usage from legacy `llm_output.token_usage` *or* the newer `usage_metadata`; emits `harness.name = "langgraph"`.
 
 > **Honesty:** unlike the other three adapters, this one is **not first-hand verified** — there was no real LangGraph session on the build machine, so it's built from the documented LangSmith run shape and exercised with synthetic fixtures only. Treat it as provisional until validated against a real export.
+
+**Validation checklist — to drop the "provisional" flag, run against one real export:**
+1. Capture a real run — `RunTree` → `.to_dict()` (nested), or `client.list_runs(...)` (flat, `parent_run_id`-linked), or a LangSmith UI trace export — into `real.json`.
+2. `node packages/capture/dist/cli.js capture real.json --harness langgraph -o real.ot.json`
+3. `node packages/capture/dist/cli.js validate real.ot.json` → conformant.
+4. Eyeball: step order matches the trace's visual tree; each `tool` run became a tool_call with the right name/args/result and `success`; the root task is populated; token totals are sane.
+5. If all four pass, replace "provisional/unverified" with "verified" in this section, the adapter header, the README, and the conformance manifest's `harness-langgraph` note. If anything is off, the gap is a real-shape the fixtures missed — add a fixture + fix, don't paper over it.
 
 ### Cross-harness summary
 

@@ -15,7 +15,7 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Conformance corpus** (9 canonical cases + "validate-your-adapter" guide; rot-proof self-check) | [`conformance/`](conformance/) | ✅ |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + LangGraph + live hook) | [`packages/capture/`](packages/capture/) | ✅ 93 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + LangGraph + live hook) | [`packages/capture/`](packages/capture/) | ✅ 99 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
@@ -157,7 +157,7 @@ you can actually debug and improve**, which an opaque score is not. And
 ## Tests
 
 ```bash
-# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel, corpus) — 94 tests
+# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel, corpus) — 99 tests
 cd packages/capture && node --import tsx test/run.ts
 # Inspector ingestion path (native OT, 3 harnesses, diagnosis) — 15 tests, plain node
 node inspector/test-ingest.mjs

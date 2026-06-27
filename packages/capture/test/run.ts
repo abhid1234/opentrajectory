@@ -212,6 +212,38 @@ ok("flat array sorts by start_time", lgF.steps[0].tool_call?.name === "open" && 
 ok("detects langgraph run tree", looksLikeLangGraph(lgNested) === true && looksLikeLangGraph(lgFlat) === true);
 ok("langgraph detector rejects gemini object", looksLikeLangGraph(gSession) === false);
 
+// real-export shape (3): a FLAT list linked only by parent_run_id (the list-runs API
+// endpoint — no child_runs), with start_time deliberately out of tree order to prove
+// we rebuild the tree, not just sort the clock.
+const lgParentIds = JSON.stringify([
+  { id: "t_b", parent_run_id: "root", run_type: "tool", name: "second", start_time: "2026-06-23T00:00:09Z", inputs: { q: "b" }, outputs: { output: "B" } },
+  { id: "root", run_type: "chain", name: "agent", start_time: "2026-06-23T00:00:00Z", inputs: { input: "do two things" }, outputs: { output: "ok" } },
+  { id: "t_a", parent_run_id: "root", run_type: "tool", name: "first", start_time: "2026-06-23T00:00:05Z", inputs: { q: "a" }, outputs: { output: "A" } },
+]);
+const lgP = captureFromLangGraph(lgParentIds);
+ok("parent_run_id flat list is conformant", validate(lgP).valid, JSON.stringify(validate(lgP).errors));
+ok("parent_run_id flat list rebuilds tree order (first before second)",
+  lgP.steps.findIndex((s) => s.tool_call?.name === "first") < lgP.steps.findIndex((s) => s.tool_call?.name === "second"));
+ok("parent_run_id flat list keeps root task", (lgP.task?.description || "").includes("two things"));
+
+// real-export shape (2): a FLAT list ordered by dotted_order (LangSmith canonical),
+// with start_time scrambled — dotted_order must win.
+const lgDotted = JSON.stringify([
+  { id: "z", dotted_order: "20260623T000000000000Z00000000.20260623T000003000000Z33333333", run_type: "tool", name: "later", start_time: "2026-06-23T00:00:01Z", inputs: {}, outputs: { output: "L" } },
+  { id: "a", dotted_order: "20260623T000000000000Z00000000.20260623T000001000000Z11111111", run_type: "tool", name: "earlier", start_time: "2026-06-23T00:00:09Z", inputs: {}, outputs: { output: "E" } },
+]);
+const lgD = captureFromLangGraph(lgDotted);
+ok("dotted_order wins over start_time",
+  lgD.steps.findIndex((s) => s.tool_call?.name === "earlier") < lgD.steps.findIndex((s) => s.tool_call?.name === "later"));
+
+// token usage via the newer usage_metadata location (not just legacy llm_output.token_usage)
+const lgUsage = captureFromLangGraph(JSON.stringify({
+  id: "root", run_type: "chain", name: "agent", start_time: "2026-06-23T00:00:00Z", inputs: { input: "hi" }, outputs: { output: "ok" },
+  child_runs: [{ id: "l1", run_type: "llm", name: "gpt", start_time: "2026-06-23T00:00:01Z",
+    outputs: { generations: [[{ text: "hello" }]], usage_metadata: { input_tokens: 11, output_tokens: 7 } } }],
+}));
+ok("usage_metadata tokens captured", lgUsage.cost?.input_tokens === 11 && lgUsage.cost?.output_tokens === 7);
+
 // --- 6c. heuristic diagnoser (offline, no key) ------------------------------
 console.log("heuristic");
 const hCtx = diagnoseHeuristic({ ot_version: "0.1", trajectory_id: "h1", harness: { name: "x" },

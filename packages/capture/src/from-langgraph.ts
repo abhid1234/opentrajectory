@@ -1,40 +1,81 @@
 // LangGraph / LangChain run tree (LangSmith export) -> OpenTrajectory v0.1. Zero deps.
 //
-// NOT first-hand verified. Unlike the Claude Code / Codex / Gemini adapters (checked
-// against real on-disk sessions), this is built from the DOCUMENTED LangSmith run-tree
-// shape and exercised with synthetic fixtures. A LangSmith "Run" has: id, name,
-// run_type (llm|chat_model|tool|chain|retriever|prompt|parser), inputs, outputs,
-// error, start_time, parent_run_id, and either nested child_runs or a flat list keyed
-// by parent_run_id. Tool runs carry the tool name/args/result; llm runs carry the text.
-// See docs/harness-emit-analysis.md §1d.
+// PROVISIONAL — not yet validated against a real captured export. Unlike the Claude
+// Code / Codex / Gemini adapters (checked against real on-disk sessions), this is built
+// from the DOCUMENTED LangSmith run-tree shape and exercised with synthetic fixtures.
+// A LangSmith "Run" has: id, name, run_type (llm|chat_model|tool|chain|retriever|
+// prompt|parser), inputs, outputs, error, start_time, parent_run_id, dotted_order, and
+// either nested child_runs or a flat list. Tool runs carry the tool name/args/result;
+// llm runs carry the text. We handle the three real export shapes:
+//   1. a nested root with `child_runs`               (RunTree.to_dict / single trace)
+//   2. a flat list ordered by `dotted_order`         (LangSmith canonical order field)
+//   3. a flat list linked only by `parent_run_id`    (the list-runs API endpoint)
+// reconstructing tree order in (2)/(3) rather than trusting wall-clock start_time.
+// See docs/harness-emit-analysis.md §1d and the validation checklist there.
 import { OT_VERSION } from "./types.js";
 import type { Step, ToolCall, Trajectory, OutcomeStatus } from "./types.js";
 import { redact, truncate, asText } from "./redact.js";
 
 type Run = Record<string, any>;
 
-/** Flatten the input into an ordered run list, supporting the common export shapes:
- *  a flat array, a `{runs:[...]}` wrapper, or a nested root with `child_runs`. */
+/** Flatten the input into an ordered run list, supporting the real export shapes:
+ *  a `{runs:[...]}` wrapper, a nested root with `child_runs`, a flat list ordered by
+ *  `dotted_order`, or a flat list linked only by `parent_run_id`. Tree order is
+ *  reconstructed (depth-first) rather than trusting wall-clock `start_time`. */
 export function flattenRuns(input: unknown): Run[] {
   const root = (input && typeof input === "object" && !Array.isArray(input) && (input as any).runs) || input;
   if (Array.isArray(root)) {
-    // flat list — if it has nesting via child_runs, expand; else order by start_time
+    // (1) explicit nesting via child_runs — expand each top-level tree
     const hasNesting = root.some((r) => Array.isArray(r?.child_runs) && r.child_runs.length);
     if (hasNesting) return root.flatMap((r) => dfs(r));
-    return [...root].sort(byStart);
+    // (2) LangSmith canonical order: dotted_order encodes the full root->node path, so a
+    //     plain lexicographic sort yields exact depth-first tree order.
+    if (root.some((r) => typeof r?.dotted_order === "string")) return [...root].sort(byOrder);
+    // (3) flat list linked only by parent_run_id (the list-runs API endpoint) — rebuild the tree
+    if (root.some((r) => r?.parent_run_id)) return treeFromParentIds(root);
+    // (4) last resort: order by start_time
+    return [...root].sort(byOrder);
   }
   if (root && typeof root === "object") return dfs(root as Run);
   return [];
 }
 
-function byStart(a: Run, b: Run): number {
-  return String(a?.start_time || "").localeCompare(String(b?.start_time || ""));
+/** Order by dotted_order when present (canonical), else by start_time. */
+function byOrder(a: Run, b: Run): number {
+  return (
+    String(a?.dotted_order || "").localeCompare(String(b?.dotted_order || "")) ||
+    String(a?.start_time || "").localeCompare(String(b?.start_time || ""))
+  );
+}
+
+/** Rebuild depth-first order from a flat list whose only nesting signal is parent_run_id. */
+function treeFromParentIds(arr: Run[]): Run[] {
+  const ids = new Set(arr.map((r) => r?.id));
+  const childrenOf = new Map<string, Run[]>();
+  const roots: Run[] = [];
+  for (const r of arr) {
+    const p = r?.parent_run_id;
+    if (p && ids.has(p)) {
+      const sibs = childrenOf.get(p) ?? [];
+      sibs.push(r);
+      childrenOf.set(p, sibs);
+    } else {
+      roots.push(r); // no parent, or parent outside this slice -> treat as a root
+    }
+  }
+  const out: Run[] = [];
+  const visit = (r: Run) => {
+    out.push(r);
+    for (const k of (childrenOf.get(r?.id) ?? []).sort(byOrder)) visit(k);
+  };
+  for (const r of roots.sort(byOrder)) visit(r);
+  return out;
 }
 
 function dfs(run: Run, out: Run[] = []): Run[] {
   if (!run || typeof run !== "object") return out;
   out.push(run);
-  const kids = Array.isArray(run.child_runs) ? [...run.child_runs].sort(byStart) : [];
+  const kids = Array.isArray(run.child_runs) ? [...run.child_runs].sort(byOrder) : [];
   for (const k of kids) dfs(k, out);
   return out;
 }
@@ -77,7 +118,9 @@ export function fromLangGraph(input: unknown, opts: { trajectoryId?: string } = 
       startedAt ??= r.start_time;
     }
     if (r.end_time) endedAt = r.end_time;
-    const usage = r.outputs?.llm_output?.token_usage || r.extra?.token_usage;
+    // token usage lives in different places across LangChain versions:
+    // legacy llm_output.token_usage, run extra.token_usage, or the newer usage_metadata.
+    const usage = r.outputs?.llm_output?.token_usage || r.extra?.token_usage || r.outputs?.usage_metadata || r.usage_metadata;
     if (usage) {
       inTok += Number(usage.prompt_tokens || usage.input_tokens || 0);
       outTok += Number(usage.completion_tokens || usage.output_tokens || 0);
