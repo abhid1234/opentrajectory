@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenTrajectory Registry — the open hub for cross-harness agent trajectories</title>
+<meta name="description" content="The community registry for OpenTrajectory: the harnesses that emit the open format, and the canonical conformance corpus every adapter is measured against. Static, zero-dependency, vendor-neutral." />
+<meta property="og:title" content="OpenTrajectory Registry — one format, every harness" />
+<meta property="og:description" content="Browse the harness adapters and the canonical conformance corpus. Add your own harness with a single .ot.json." />
+<meta property="og:type" content="website" />
+<link rel="icon" type="image/svg+xml" href="../inspector/favicon.svg" />
+<style>
+  @font-face { font-family:'JetBrains Mono'; font-weight:400; font-display:swap; src:url('../inspector/fonts/jetbrains-mono-400.woff2') format('woff2'); }
+  @font-face { font-family:'JetBrains Mono'; font-weight:700; font-display:swap; src:url('../inspector/fonts/jetbrains-mono-700.woff2') format('woff2'); }
+  @font-face { font-family:'IBM Plex Sans'; font-weight:400; font-display:swap; src:url('../inspector/fonts/ibm-plex-sans-400.woff2') format('woff2'); }
+  @font-face { font-family:'IBM Plex Sans'; font-weight:600; font-display:swap; src:url('../inspector/fonts/ibm-plex-sans-600.woff2') format('woff2'); }
+  @font-face { font-family:'Fraunces'; font-weight:600; font-display:swap; src:url('../inspector/fonts/fraunces-600.woff2') format('woff2'); }
+  :root {
+    --paper:#f4efe6; --paper-2:#ece4d6; --card:#fbf8f1;
+    --ink:#1c1714; --ink-soft:#5b5048; --rule:#d8cdb9;
+    --oxblood:#7b2d26; --oxblood-2:#9c4339;
+    --ok:#5d7d4a; --warn:#b8503f;
+    --d-TRAINING:#b8503f; --d-HARNESS:#4a9b8e; --d-PRODUCT:#d2a44a; --d-BOTH:#9d7bb0; --d-CLEAN:#7aa863;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans',system-ui,sans-serif;
+    --display:'Fraunces',Georgia,serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  a { color:var(--oxblood); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:0.92em; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px 80px; }
+
+  header.top { border-bottom:2px solid var(--ink); }
+  header.top .wrap { padding-top:22px; padding-bottom:22px; }
+  .k { font-family:var(--mono); font-size:9.5px; letter-spacing:0.26em; text-transform:uppercase; color:var(--oxblood); }
+  .brand { display:flex; align-items:center; gap:11px; }
+  .brand svg { width:40px; height:24px; }
+  .brand svg polyline { fill:none; stroke:var(--ink); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .brand svg .head { fill:var(--oxblood); stroke:none; }
+  .brand h1 { font-family:var(--display); font-weight:600; font-size:23px; margin:2px 0 0; letter-spacing:-0.01em; }
+  .brand h1 em { font-style:normal; color:var(--oxblood); }
+  .lede { font-family:var(--display); font-size:21px; line-height:1.4; margin:20px 0 8px; max-width:46em; letter-spacing:-0.01em; }
+  .sub { color:var(--ink-soft); max-width:44em; }
+  .navlinks { font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:14px; display:flex; gap:14px; flex-wrap:wrap; }
+
+  h2 { font-family:var(--display); font-weight:600; font-size:19px; letter-spacing:-0.01em; margin:46px 0 4px; }
+  .h2note { color:var(--ink-soft); font-size:13px; margin:0 0 18px; }
+  section:first-of-type h2 { margin-top:34px; }
+
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media (max-width:640px){ .grid { grid-template-columns:1fr; } }
+  .adapter { background:var(--card); border:1px solid var(--rule); border-radius:4px; padding:14px 15px; }
+  .adapter .nm { font-family:var(--display); font-weight:600; font-size:16px; display:flex; align-items:center; gap:9px; }
+  .adapter .native { font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:6px; }
+  .adapter .src { font-family:var(--mono); font-size:10.5px; margin-top:8px; }
+  .badge { font-family:var(--mono); font-size:8.5px; letter-spacing:0.1em; text-transform:uppercase; padding:2px 7px; border-radius:10px; font-weight:700; }
+  .badge.verified { background:rgba(93,125,74,0.16); color:var(--ok); border:1px solid rgba(93,125,74,0.4); }
+  .badge.provisional { background:rgba(184,80,63,0.13); color:var(--warn); border:1px solid rgba(184,80,63,0.4); }
+
+  .case { background:var(--card); border:1px solid var(--rule); border-radius:4px; margin-bottom:10px; overflow:hidden; }
+  .case > summary { list-style:none; cursor:pointer; padding:13px 15px; display:flex; align-items:baseline; gap:12px; }
+  .case > summary::-webkit-details-marker { display:none; }
+  .case > summary:hover { background:var(--paper-2); }
+  .case .file { font-family:var(--mono); font-weight:700; font-size:12.5px; }
+  .case .demo { color:var(--ink-soft); font-size:12.5px; flex:1; min-width:0; }
+  .case .facts { font-family:var(--mono); font-size:9.5px; color:var(--ink-soft); white-space:nowrap; letter-spacing:0.04em; text-transform:uppercase; }
+  .case[open] > summary { border-bottom:1px solid var(--rule); }
+  .case .body { padding:14px 15px; }
+  .musts { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .must { font-family:var(--mono); font-size:9.5px; padding:2px 7px; border:1px solid var(--rule); border-radius:3px; color:var(--ink-soft); }
+  pre.json { font-family:var(--mono); font-size:11px; line-height:1.5; background:#1b1714; color:#d9cfc2; padding:14px; border-radius:4px; overflow:auto; max-height:380px; margin:0; }
+  .vmark { font-family:var(--mono); font-size:8.5px; padding:2px 7px; border-radius:10px; letter-spacing:0.06em; text-transform:uppercase; font-weight:700; color:#1c1714; }
+
+  .add { background:var(--card); border:1px solid var(--rule); border-radius:4px; padding:18px 18px; }
+  .add ol { margin:8px 0 0; padding-left:20px; } .add li { margin:5px 0; }
+  pre.sh { font-family:var(--mono); font-size:11.5px; background:#1b1714; color:#d9cfc2; padding:12px 14px; border-radius:4px; overflow:auto; }
+  pre.sh .c { color:#8a7c6e; }
+  .foot { margin-top:54px; padding-top:18px; border-top:1px solid var(--rule); font-family:var(--mono); font-size:11px; color:var(--ink-soft); display:flex; gap:16px; flex-wrap:wrap; }
+  .note { font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); background:var(--paper-2); border-left:2px solid var(--oxblood); padding:8px 12px; border-radius:0 3px 3px 0; margin:14px 0 0; }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <span class="k">Open Agent-Trajectory Format · Registry</span>
+      <div class="brand" style="margin-top:5px">
+        <svg viewBox="0 0 40 24" aria-hidden="true"><polyline points="1,18 7,18 11,6 16,20 21,11 26,15 31,4 35,12 39,12" /><circle class="head" cx="39" cy="12" r="2.4"/></svg>
+        <h1>Open<em>Trajectory</em> Registry</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <p class="lede">The open hub where every harness's trajectories meet one format.</p>
+    <p class="sub">Each harness records the same spine of an agent run in its own vocabulary. The registry tracks the adapters that normalize them into the one portable <code>.ot.json</code>, and publishes the <strong>canonical conformance corpus</strong> every adapter — first-party or community — is measured against. Static, zero-dependency, vendor-neutral.</p>
+    <div class="navlinks">
+      <a href="../docs/opentrajectory-spec.md">spec v0.1 (frozen) ↗</a>
+      <a href="../schema/opentrajectory-0.1.schema.json">JSON Schema ↗</a>
+      <a href="../conformance/">conformance corpus ↗</a>
+      <a href="../inspector/index.html">Inspector ↗</a>
+      <a href="https://github.com/abhid1234/opentrajectory">github ↗</a>
+    </div>
+
+    <section>
+      <h2>Harness adapters</h2>
+      <p class="h2note">The harnesses that emit OpenTrajectory today. <span style="color:var(--ok)">Verified</span> = checked first-hand against a real on-disk session; <span style="color:var(--warn)">provisional</span> = built from the documented schema, not yet a validated real export.</p>
+      <div class="grid" id="adapters"></div>
+    </section>
+
+    <section>
+      <h2>Conformance corpus</h2>
+      <p class="h2note">Nine canonical documents, one per shape an adapter must get right. Make your emitter produce these and pass <code>ot validate</code>, and you conform. Click any case to read it.</p>
+      <div id="cases"></div>
+    </section>
+
+    <section>
+      <h2>Add your harness</h2>
+      <div class="add">
+        <p style="margin:0">The registry is community-owned. To add a harness, open a PR that contributes one canonical case and (ideally) an adapter:</p>
+        <ol>
+          <li>Capture a real run from your harness and normalize it to <code>.ot.json</code> (see the four adapters in <code>packages/capture/src/from-*.ts</code> as references).</li>
+          <li>Add <code>conformance/harness-&lt;yours&gt;.ot.json</code> + a <code>manifest.json</code> entry with its <code>must</code> invariants.</li>
+          <li>Validate locally, then open the PR:</li>
+        </ol>
+        <pre class="sh"><span class="c"># your output, checked by the same validator the CLI + GitHub Action run</span>
+node tools/ot-validate.mjs path/to/your-output.ot.json
+node conformance/check.mjs        <span class="c"># corpus + invariants + no orphans</span>
+node registry/build.mjs           <span class="c"># regenerate this page's data</span></pre>
+        <p class="note">v2 roadmap: this static page is the seed. A hosted registry (search, side-by-side benchmark, submission flow) is the next layer — but the format, corpus, and validator that make it meaningful already ship here, today.</p>
+      </div>
+    </section>
+
+    <div class="foot">
+      <span>OpenTrajectory Registry · generated from the conformance corpus</span>
+      <span class="grow"></span>
+      <a href="../CHANGELOG.md">changelog</a>
+      <a href="../docs/opentrajectory-spec.md">spec</a>
+      <a href="https://github.com/abhid1234/opentrajectory">source</a>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    (function () {
+      var R = window.__REGISTRY__;
+      if (!R) { document.getElementById("cases").textContent = "registry/data.js not loaded — run: node registry/build.mjs"; return; }
+      var esc = function (s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
+      var DHUE = { HARNESS: "--d-HARNESS", TRAINING: "--d-TRAINING", PRODUCT: "--d-PRODUCT", BOTH: "--d-BOTH", CLEAN: "--d-CLEAN" };
+
+      document.getElementById("adapters").innerHTML = R.adapters.map(function (a) {
+        return '<div class="adapter">' +
+          '<div class="nm">' + esc(a.label) + ' <span class="badge ' + a.status + '">' + a.status + '</span></div>' +
+          '<div class="native">native: ' + esc(a.native) + '</div>' +
+          '<div class="src"><a href="../' + esc(a.source) + '">' + esc(a.source) + '</a></div>' +
+        '</div>';
+      }).join("");
+
+      document.getElementById("cases").innerHTML = R.cases.map(function (c) {
+        var verdict = c.verdict ? '<span class="vmark" style="background:var(' + (DHUE[c.verdict] || "--rule") + ')">' + esc(c.verdict) + '</span> ' : "";
+        var facts = esc(c.harness || "—") + " · " + c.steps + " step" + (c.steps === 1 ? "" : "s") + " · " + esc(c.status || "—");
+        var musts = (c.must || []).map(function (m) { return '<span class="must">' + esc(m) + '</span>'; }).join("");
+        return '<details class="case">' +
+          '<summary><span class="file">' + esc(c.file) + '</span>' +
+          '<span class="demo">' + esc(c.demonstrates) + '</span>' +
+          '<span class="facts">' + verdict + facts + '</span></summary>' +
+          '<div class="body"><div class="musts">' + musts + '</div>' +
+          '<pre class="json">' + esc(c.json) + '</pre></div>' +
+        '</details>';
+      }).join("");
+    })();
+  </script>
+</body>
+</html>

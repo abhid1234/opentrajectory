@@ -13,15 +13,16 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Format spec** (v0.1) + **machine-readable JSON Schema** | [`docs/opentrajectory-spec.md`](docs/opentrajectory-spec.md) · [`schema/`](schema/opentrajectory-0.1.schema.json) | ✅ |
 | **CI validation** (zero-dep validator + reusable GitHub Action) | [`tools/ot-validate.mjs`](tools/ot-validate.mjs) · [`action.yml`](action.yml) | ✅ |
 | **Conformance corpus** (9 canonical cases + "validate-your-adapter" guide; rot-proof self-check) | [`conformance/`](conformance/) | ✅ |
+| **Registry** (static, zero-dep hub over the adapters + corpus; generated from the corpus, drift-guarded) | [`registry/`](registry/) | ✅ v2 seed |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + LangGraph + live hook) | [`packages/capture/`](packages/capture/) | ✅ 99 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini** adapters + LangGraph + live hook) | [`packages/capture/`](packages/capture/) | ✅ 100 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
 | **Wedge demo** (recorded ~20s cast) **+ self-improvement loop demo** | [`demo/wedge.cast`](demo/wedge.cast) · [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
-v1 ships **four capture adapters**: Claude Code, Codex CLI, and Gemini CLI — all verified first-hand against real on-disk sessions — plus **LangGraph/LangSmith**, built from the documented run-tree schema and exercised with synthetic fixtures (flagged provisional, not yet validated against a real export). All read into one format the same Inspector audits (the cross-harness proof). A hosted trajectory registry is next. The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
+v1 ships **four capture adapters**: Claude Code, Codex CLI, and Gemini CLI — all verified first-hand against real on-disk sessions — plus **LangGraph/LangSmith**, built from the documented run-tree schema and exercised with synthetic fixtures (flagged provisional, not yet validated against a real export). All read into one format the same Inspector audits (the cross-harness proof). A [conformance corpus](conformance/) + a static [registry](registry/) (generated from that corpus) are the seed of the community hub; a hosted version is next. The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
 ## Quick start
 
@@ -157,7 +158,7 @@ you can actually debug and improve**, which an opaque score is not. And
 ## Tests
 
 ```bash
-# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel, corpus) — 99 tests
+# SDK (validators, 4 adapters, redaction, round-trip, hook, heuristic, judge, otel, corpus) — 100 tests
 cd packages/capture && node --import tsx test/run.ts
 # Inspector ingestion path (native OT, 3 harnesses, diagnosis) — 15 tests, plain node
 node inspector/test-ingest.mjs

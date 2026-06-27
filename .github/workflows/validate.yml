@@ -19,6 +19,8 @@ jobs:
         run: node tools/ot-validate.mjs examples demo inspector bench/gold conformance
       - name: Conformance corpus self-check (validate + invariants + no orphans)
         run: node conformance/check.mjs
+      - name: Registry data is in sync with the corpus
+        run: node registry/build.mjs --check
 
   sdk-tests:
     runs-on: ubuntu-latest

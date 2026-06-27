@@ -359,6 +359,12 @@ let corpusOk = true;
 try { execFileSync("node", [join(repoRoot, "conformance/check.mjs")], { stdio: "pipe" }); } catch { corpusOk = false; }
 ok("conformance corpus passes check.mjs (9 cases, invariants, no orphans)", corpusOk);
 
+// the registry page's data.js must be regenerated from the corpus (no drift between
+// what the registry shows and what the repo ships).
+let registryFresh = true;
+try { execFileSync("node", [join(repoRoot, "registry/build.mjs"), "--check"], { stdio: "pipe" }); } catch { registryFresh = false; }
+ok("registry/data.js is current (registry/build.mjs --check)", registryFresh);
+
 // --- summary ----------------------------------------------------------------
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);
