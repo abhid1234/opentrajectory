@@ -59,6 +59,9 @@ async function boot() {
       const text = await fetch("demo.ot.json").then((r) => r.text());
       importText(text);
       demoLoaded = state.index.length > 0;
+      // the demo set is small and (when judged) often agrees; don't hide it behind the
+      // dataset's default "disagree" filter — show everything when booting standalone.
+      if (demoLoaded) state.filter = "all";
     } catch (e) {}
   }
 
@@ -793,7 +796,8 @@ function diagnoseLocal(t) {
 function addLocalTrajectory(raw, i) {
   const t = normalizeLocal(raw, i);
   t.heuristic = diagnoseLocal(t);
-  t.agree = false;
+  // agree only means something once a judge verdict exists; compute it, else leave neutral (null)
+  t.agree = (t.judge && t.judge.diagnosis) ? (t.heuristic.diagnosis === t.judge.diagnosis) : null;
   // dedupe: re-importing the same trajectory replaces it instead of stacking copies
   const dup = state.index.filter((c) => c.local && c.task_id === t.task_id
                                         && c.n_messages === t.messages.length);
@@ -804,7 +808,7 @@ function addLocalTrajectory(raw, i) {
     trajectory_id: t.trajectory_id, task_id: t.task_id, repo: t.repo,
     heuristic_diagnosis: t.heuristic.diagnosis, heuristic_category: t.heuristic.category,
     judge_diagnosis: t.judge && t.judge.diagnosis ? t.judge.diagnosis : null,
-    judge_category: t.judge && t.judge.category ? t.judge.category : null, agree: false,
+    judge_category: t.judge && t.judge.category ? t.judge.category : null, agree: t.agree,
     n_messages: t.messages.length, offending_index: null, fork: null, local: true,
     harness: t.ot ? t.ot.harness : null, // OpenTrajectory: source harness, for the cross-harness badge
   });

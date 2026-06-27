@@ -2,49 +2,266 @@
   {
     "ot_version": "0.1",
     "trajectory_id": "demo-claude-code-contextgap",
-    "harness": { "name": "claude-code", "version": "2.x" },
-    "task": { "task_id": "fix-failing-auth-test", "description": "The test suite is red. Make test_auth.py pass.", "repo": "acme/api" },
+    "harness": {
+      "name": "claude-code",
+      "version": "2.x"
+    },
+    "task": {
+      "task_id": "fix-failing-auth-test",
+      "description": "The test suite is red. Make test_auth.py pass.",
+      "repo": "acme/api"
+    },
     "model": "claude-opus-4-8",
     "steps": [
-      { "index": 0, "role": "user", "message": { "text": "The test suite is red. Make test_auth.py pass." } },
-      { "index": 1, "role": "assistant", "message": { "text": "I'll run the auth tests to see the failure." }, "decision": { "text": "Reproduce the failure before editing", "kind": "plan" } },
-      { "index": 2, "role": "assistant", "tool_call": { "id": "t1", "name": "Bash", "args": { "command": "pytest tests/test_auth.py -x" }, "result": "ImportError while importing test module 'tests/test_auth.py'.\nModuleNotFoundError: No module named 'jwt'", "success": false, "error": "ModuleNotFoundError: No module named 'jwt'" } },
-      { "index": 3, "role": "assistant", "tool_call": { "id": "t2", "name": "Bash", "args": { "command": "pip install pyjwt" }, "result": "Permission denied: the package index is unreachable in this sandbox", "success": false } },
-      { "index": 4, "role": "assistant", "tool_call": { "id": "t3", "name": "Read", "args": { "file_path": "requirements.txt" }, "result": "No such file or directory: 'requirements.txt'", "success": false } },
-      { "index": 5, "role": "assistant", "message": { "text": "I cannot install the missing 'jwt' dependency (no network, no requirements file). The failure is environmental." } }
+      {
+        "index": 0,
+        "role": "user",
+        "message": {
+          "text": "The test suite is red. Make test_auth.py pass."
+        }
+      },
+      {
+        "index": 1,
+        "role": "assistant",
+        "message": {
+          "text": "I'll run the auth tests to see the failure."
+        },
+        "decision": {
+          "text": "Reproduce the failure before editing",
+          "kind": "plan"
+        }
+      },
+      {
+        "index": 2,
+        "role": "assistant",
+        "tool_call": {
+          "id": "t1",
+          "name": "Bash",
+          "args": {
+            "command": "pytest tests/test_auth.py -x"
+          },
+          "result": "ImportError while importing test module 'tests/test_auth.py'.\nModuleNotFoundError: No module named 'jwt'",
+          "success": false,
+          "error": "ModuleNotFoundError: No module named 'jwt'"
+        }
+      },
+      {
+        "index": 3,
+        "role": "assistant",
+        "tool_call": {
+          "id": "t2",
+          "name": "Bash",
+          "args": {
+            "command": "pip install pyjwt"
+          },
+          "result": "Permission denied: the package index is unreachable in this sandbox",
+          "success": false
+        }
+      },
+      {
+        "index": 4,
+        "role": "assistant",
+        "tool_call": {
+          "id": "t3",
+          "name": "Read",
+          "args": {
+            "file_path": "requirements.txt"
+          },
+          "result": "No such file or directory: 'requirements.txt'",
+          "success": false
+        }
+      },
+      {
+        "index": 5,
+        "role": "assistant",
+        "message": {
+          "text": "I cannot install the missing 'jwt' dependency (no network, no requirements file). The failure is environmental."
+        }
+      }
     ],
-    "outcome": { "status": "failure", "resolved": false },
-    "metadata": { "note": "Captured live via @opentrajectory/capture from a Claude Code transcript." }
+    "outcome": {
+      "status": "failure",
+      "resolved": false,
+      "verdict": {
+        "diagnosis": "HARNESS",
+        "category": "Dependency installation failure",
+        "confidence": 1,
+        "reasoning": "The agent could not install the 'jwt' dependency because the package index was unreachable and permission was denied within the sandbox environment, preventing it from addressing the missing module.",
+        "offending_step_index": 3,
+        "evaluator": "opentrajectory/judge gemini-2.5-flash"
+      }
+    },
+    "metadata": {
+      "note": "Captured live via @opentrajectory/capture from a Claude Code transcript."
+    }
   },
   {
     "ot_version": "0.1",
     "trajectory_id": "demo-codex-cli-clean",
-    "harness": { "name": "codex-cli", "version": "0.80.0" },
-    "task": { "task_id": "add-retry-to-fetch", "description": "Add a 3x retry with backoff to fetchUser() and prove it works.", "repo": "acme/web" },
+    "harness": {
+      "name": "codex-cli",
+      "version": "0.80.0"
+    },
+    "task": {
+      "task_id": "add-retry-to-fetch",
+      "description": "Add a 3x retry with backoff to fetchUser() and prove it works.",
+      "repo": "acme/web"
+    },
     "model": "gpt-5-codex",
     "steps": [
-      { "index": 0, "role": "user", "message": { "text": "Add a 3x retry with backoff to fetchUser() and prove it works." } },
-      { "index": 1, "role": "assistant", "tool_call": { "id": "call_1", "name": "shell_command", "args": { "command": "rg -n 'function fetchUser' src/" }, "result": "Exit code: 0\nOutput:\nsrc/api.ts:42:export async function fetchUser(id) {", "success": true } },
-      { "index": 2, "role": "assistant", "tool_call": { "id": "call_2", "name": "apply_patch", "args": { "path": "src/api.ts", "patch": "wrap fetchUser body in a 3x retry loop with exponential backoff" }, "result": "Exit code: 0\nOutput:\nApplied patch to src/api.ts", "success": true } },
-      { "index": 3, "role": "assistant", "tool_call": { "id": "call_3", "name": "shell_command", "args": { "command": "npm test -- api.test.ts" }, "result": "Exit code: 0\nOutput:\nPASS  src/api.test.ts  (fetchUser retries 3x on 503 then succeeds)\nTests: 4 passed", "success": true } },
-      { "index": 4, "role": "assistant", "message": { "text": "Done: fetchUser now retries 3x with backoff; the new test passes." } }
+      {
+        "index": 0,
+        "role": "user",
+        "message": {
+          "text": "Add a 3x retry with backoff to fetchUser() and prove it works."
+        }
+      },
+      {
+        "index": 1,
+        "role": "assistant",
+        "tool_call": {
+          "id": "call_1",
+          "name": "shell_command",
+          "args": {
+            "command": "rg -n 'function fetchUser' src/"
+          },
+          "result": "Exit code: 0\nOutput:\nsrc/api.ts:42:export async function fetchUser(id) {",
+          "success": true
+        }
+      },
+      {
+        "index": 2,
+        "role": "assistant",
+        "tool_call": {
+          "id": "call_2",
+          "name": "apply_patch",
+          "args": {
+            "path": "src/api.ts",
+            "patch": "wrap fetchUser body in a 3x retry loop with exponential backoff"
+          },
+          "result": "Exit code: 0\nOutput:\nApplied patch to src/api.ts",
+          "success": true
+        }
+      },
+      {
+        "index": 3,
+        "role": "assistant",
+        "tool_call": {
+          "id": "call_3",
+          "name": "shell_command",
+          "args": {
+            "command": "npm test -- api.test.ts"
+          },
+          "result": "Exit code: 0\nOutput:\nPASS  src/api.test.ts  (fetchUser retries 3x on 503 then succeeds)\nTests: 4 passed",
+          "success": true
+        }
+      },
+      {
+        "index": 4,
+        "role": "assistant",
+        "message": {
+          "text": "Done: fetchUser now retries 3x with backoff; the new test passes."
+        }
+      }
     ],
-    "outcome": { "status": "success", "resolved": true },
-    "metadata": { "note": "Captured via @opentrajectory/capture from a Codex CLI rollout (illustrative demo fixture)." }
+    "outcome": {
+      "status": "success",
+      "resolved": true,
+      "verdict": {
+        "diagnosis": "CLEAN",
+        "category": "No failure",
+        "confidence": 1,
+        "reasoning": "The agent successfully added the retry logic to the fetchUser function and verified its implementation by running the relevant tests, which passed. There is no evidence of gaming or environmental issues.",
+        "offending_step_index": -1,
+        "evaluator": "opentrajectory/judge gemini-2.5-flash"
+      }
+    },
+    "metadata": {
+      "note": "Captured via @opentrajectory/capture from a Codex CLI rollout (illustrative demo fixture)."
+    }
   },
   {
     "ot_version": "0.1",
     "trajectory_id": "demo-gemini-cli-product",
-    "harness": { "name": "gemini-cli" },
-    "task": { "task_id": "fix-pagination", "description": "Fix the off-by-one in paginate() so the test passes.", "repo": "acme/web" },
+    "harness": {
+      "name": "gemini-cli"
+    },
+    "task": {
+      "task_id": "fix-pagination",
+      "description": "Fix the off-by-one in paginate() so the test passes.",
+      "repo": "acme/web"
+    },
     "steps": [
-      { "index": 0, "role": "user", "message": { "text": "Fix the off-by-one in paginate() so the test passes." } },
-      { "index": 1, "role": "assistant", "tool_call": { "id": "read_file-1", "name": "read_file", "args": { "file_path": "src/paginate.ts" }, "result": "export function paginate(page, size) { const start = page * size; ... }", "success": true } },
-      { "index": 2, "role": "assistant", "tool_call": { "id": "replace-1", "name": "replace", "args": { "file_path": "src/paginate.ts", "old": "page * size", "new": "(page - 1) * size" }, "result": "Modified src/paginate.ts", "success": true } },
-      { "index": 3, "role": "assistant", "tool_call": { "id": "run-1", "name": "run_shell_command", "args": { "command": "npm test paginate" }, "result": "AssertionError: expected 20 items, got 19", "success": false } },
-      { "index": 4, "role": "assistant", "message": { "text": "Still off by one at the boundary — my fix wasn't right." } }
+      {
+        "index": 0,
+        "role": "user",
+        "message": {
+          "text": "Fix the off-by-one in paginate() so the test passes."
+        }
+      },
+      {
+        "index": 1,
+        "role": "assistant",
+        "tool_call": {
+          "id": "read_file-1",
+          "name": "read_file",
+          "args": {
+            "file_path": "src/paginate.ts"
+          },
+          "result": "export function paginate(page, size) { const start = page * size; ... }",
+          "success": true
+        }
+      },
+      {
+        "index": 2,
+        "role": "assistant",
+        "tool_call": {
+          "id": "replace-1",
+          "name": "replace",
+          "args": {
+            "file_path": "src/paginate.ts",
+            "old": "page * size",
+            "new": "(page - 1) * size"
+          },
+          "result": "Modified src/paginate.ts",
+          "success": true
+        }
+      },
+      {
+        "index": 3,
+        "role": "assistant",
+        "tool_call": {
+          "id": "run-1",
+          "name": "run_shell_command",
+          "args": {
+            "command": "npm test paginate"
+          },
+          "result": "AssertionError: expected 20 items, got 19",
+          "success": false
+        }
+      },
+      {
+        "index": 4,
+        "role": "assistant",
+        "message": {
+          "text": "Still off by one at the boundary — my fix wasn't right."
+        }
+      }
     ],
-    "outcome": { "status": "failure", "resolved": false },
-    "metadata": { "note": "Captured via @opentrajectory/capture from a Gemini CLI session (illustrative demo fixture). No env error, no gamed reward — a genuine logic gap (PRODUCT)." }
+    "outcome": {
+      "status": "failure",
+      "resolved": false,
+      "verdict": {
+        "diagnosis": "PRODUCT",
+        "category": "Incorrect logic in code modification",
+        "confidence": 0.9,
+        "reasoning": "The agent attempted to fix the off-by-one error by modifying the calculation, but the change introduced a new incorrect logic, leading to the test failing with a different off-by-one error (expected 20, got 19).",
+        "offending_step_index": 2,
+        "evaluator": "opentrajectory/judge gemini-2.5-flash"
+      }
+    },
+    "metadata": {
+      "note": "Captured via @opentrajectory/capture from a Gemini CLI session (illustrative demo fixture). No env error, no gamed reward — a genuine logic gap (PRODUCT)."
+    }
   }
 ]
