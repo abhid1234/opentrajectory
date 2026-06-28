@@ -1,4 +1,4 @@
-// Public API for @opentrajectory/capture. Zero runtime dependencies.
+// Public API for @avee1234/capture. Zero runtime dependencies.
 export * from "./types.js";
 export { validate, assertValid } from "./validate.js";
 export type { ValidationResult } from "./validate.js";

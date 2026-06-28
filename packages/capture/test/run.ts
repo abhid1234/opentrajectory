@@ -1,4 +1,4 @@
-// Zero-dependency test runner for @opentrajectory/capture.
+// Zero-dependency test runner for @avee1234/capture.
 // Run: node --import tsx test/run.ts
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";

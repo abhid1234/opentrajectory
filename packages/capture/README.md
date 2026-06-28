@@ -1,11 +1,11 @@
-# @opentrajectory/capture
+# @avee1234/capture
 
 **Capture an AI agent run into one open, vendor-neutral `.ot.json` — then validate, diagnose, and judge it.** Zero runtime dependencies (Node built-ins only).
 
 Part of [OpenTrajectory](https://github.com/abhid1234/opentrajectory): the open format every agent can emit, and the reference tools that read it.
 
 ```bash
-npm i -D @opentrajectory/capture
+npm i -D @avee1234/capture
 ```
 
 ## CLI (`ot`)
@@ -39,7 +39,7 @@ import {
   diagnoseHeuristic,       // offline diagnosis (no key)
   judgeTrajectory,         // LLM judge -> verdict (Gemini)
   toMessages, toOtel,      // interop: OpenAI messages / OTel spans
-} from "@opentrajectory/capture";
+} from "@avee1234/capture";
 
 const traj = captureFromTranscript(transcriptJsonl);
 if (validate(traj).valid) console.log(diagnoseHeuristic(traj).diagnosis); // HARNESS | TRAINING | PRODUCT | CLEAN

@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to OpenTrajectory. The **format** is versioned by `ot_version` (spec §7);
-the **SDK/CLI** by the `@opentrajectory/capture` package version.
+the **SDK/CLI** by the `@avee1234/capture` package version.
 
 ## v0.1.0 — 2026-06-27 (v1 scope complete; format frozen)
 
@@ -20,7 +20,7 @@ First complete release: the open, vendor-neutral trajectory **format** + a zero-
   guide + a rot-proof `check.mjs` (manifest invariants, no orphans). The seed of the registry.
 - **Zero-dep CI validator** (`tools/ot-validate.mjs`) + **reusable GitHub Action** (`action.yml`).
 
-### Capture SDK + CLI (`@opentrajectory/capture`, zero runtime deps)
+### Capture SDK + CLI (`@avee1234/capture`, zero runtime deps)
 - **Four harness adapters:** Claude Code, Codex CLI, Antigravity CLI (all verified first-hand against
   real on-disk sessions) + **LangGraph/LangSmith** (provisional — built from the documented
   run-tree shape; handles the three real export shapes: nested `child_runs`, `dotted_order`-

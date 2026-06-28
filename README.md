@@ -2,6 +2,8 @@
 
 **An open, vendor-neutral format for AI agent trajectories — plus a zero-dependency capture SDK and the reference Inspector that reads and scores it.**
 
+[**▲ Live Inspector**](https://opentrajectory.vercel.app) · [**npm: `@avee1234/capture`**](https://www.npmjs.com/package/@avee1234/capture) · [**Read the story →**](https://abhid.substack.com/p/i-built-an-open-format-for-ai-agent)
+
 Every agent harness (Claude Code, Codex CLI, Antigravity, LangGraph) already records the same spine of a run — ordered steps, tool calls (name / args / result / success), decisions, outcome — but in four mutually incompatible vocabularies, none designed for evaluation. OpenTrajectory is the one **portable file** they can all emit, and the Inspector is the validated reader that tells you *why* a run succeeded or failed.
 
 OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge needs (per-step `success`, a top-level `outcome`, an evaluator-filled `verdict`). It is designed to be [OpenTelemetry-GenAI-mappable](docs/opentrajectory-spec.md#appendix-a--opentelemetry-genai-mapping-compatibility-not-competition), not to compete with observability plumbing.
@@ -44,16 +46,16 @@ See [`demo/README.md`](demo/README.md) for the full live-capture-hook setup.
 OpenTrajectory is meant to be emitted and validated by anyone — not just this repo.
 
 ```bash
-# validate trajectories with zero install — single self-contained file, works today
-node tools/ot-validate.mjs traces/      # recurses for *.ot.json / *.ot.jsonl
+# install the SDK + CLI (zero runtime deps) — published on npm
+npm i -D @avee1234/capture          # then: npx ot validate traces/
 
-# the full SDK + CLI, from source (zero runtime deps)
-cd packages/capture && npm run build    # then: node dist/cli.js validate traces/
+# or validate with zero install — single self-contained file
+node tools/ot-validate.mjs traces/  # recurses for *.ot.json / *.ot.jsonl
 ```
 
-> The npm package `@opentrajectory/capture` (so `npm i -D @opentrajectory/capture` / `npx ot …`)
-> is **publish-pending** — until then, use the zero-install validator above or the CLI from source
-> (`node packages/capture/dist/cli.js …`, shown as `ot …` throughout this README).
+The CLI ships as **[`@avee1234/capture`](https://www.npmjs.com/package/@avee1234/capture)** on npm
+(zero runtime dependencies; the `ot` command). The story behind it:
+**[I built an open format for AI agent trajectories →](https://abhid.substack.com/p/i-built-an-open-format-for-ai-agent)**
 
 **Writing an adapter for a new harness?** [`conformance/`](conformance/) is the proof harness —
 9 canonical documents (one per shape: minimal, redaction, failure, multi-tool, filled verdict,
