@@ -684,7 +684,7 @@ function makeGuess(dx) {
 }
 
 /* ---- bring-your-own trajectory (runs 100% in the browser) -------------- */
-const MAX_LOCAL = 20, MAX_MSG_CHARS = 6000;
+const MAX_LOCAL = 50, MAX_MSG_CHARS = 6000;   // per-import cap; headroom for the ~20-trajectory demo + the user's own imports
 
 // Native OpenTrajectory ({ot_version, steps:[...], outcome}) -> internal trace shape.
 // This is the OpenTrajectory integration: the Inspector reads the open format directly,
