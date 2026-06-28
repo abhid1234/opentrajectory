@@ -180,9 +180,9 @@ function _railSec(label) {
 }
 
 function renderRail() {
-  // your imports: pinned on top, only narrowed by the search box (never by filter chips)
-  const locals = state.index.filter((c) => c.local &&
-    (!state.q || (c.task_id + " " + c.repo).toLowerCase().includes(state.q)));
+  // your imports / the demo set: pinned on top, narrowed by the search box AND the filter
+  // chips (disagree / context-gap / reward-hack / …) so the 20+ demo trajectories are filterable
+  const locals = state.index.filter((c) => c.local && passes(c));
   state.view = state.index.filter((c) => !c.local && passes(c));
   const list = $("#raillist");
   list.innerHTML = "";
@@ -700,7 +700,10 @@ function normalizeOpenTrajectory(r, i) {
     const tc = s.tool_call;
     if (tc) {
       push("assistant", s.message ? s.message.text : "", [{ name: tc.name, args: JSON.stringify(tc.args || {}).slice(0, 2000), success: tc.success }]);
-      if (tc.result != null) push("tool", tc.result, []);
+      // surface BOTH result and (on failure) the error, so the context-gap detector sees
+      // markers that live in tool_call.error (missing dep/credential/file) not just result.
+      const toolOut = [tc.result != null ? String(tc.result) : "", tc.success === false && tc.error ? String(tc.error) : ""].filter(Boolean).join("\n");
+      if (toolOut) push("tool", toolOut, []);
     } else if (s.message) {
       push(s.role === "user" ? "user" : "assistant", s.message.text, []);
     }
