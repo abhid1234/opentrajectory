@@ -21,7 +21,7 @@ First complete release: the open, vendor-neutral trajectory **format** + a zero-
 - **Zero-dep CI validator** (`tools/ot-validate.mjs`) + **reusable GitHub Action** (`action.yml`).
 
 ### Capture SDK + CLI (`@opentrajectory/capture`, zero runtime deps)
-- **Four harness adapters:** Claude Code, Codex CLI, Gemini CLI (all verified first-hand against
+- **Four harness adapters:** Claude Code, Codex CLI, Antigravity CLI (all verified first-hand against
   real on-disk sessions) + **LangGraph/LangSmith** (provisional — built from the documented
   run-tree shape; handles the three real export shapes: nested `child_runs`, `dotted_order`-
   ordered flat lists, and `parent_run_id`-linked flat lists; reconstructs tree order).

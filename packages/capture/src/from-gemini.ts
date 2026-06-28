@@ -1,4 +1,4 @@
-// Gemini CLI session (JSON) -> OpenTrajectory v0.1. Zero dependencies.
+// Antigravity CLI session (JSON) -> OpenTrajectory v0.1. Zero dependencies.
 // Schema verified first-hand from ~/.gemini/tmp/<hash>/chats/session-*.json
 // (see docs/harness-emit-analysis.md §1c). Unlike Claude Code / Codex (JSONL),
 // a Gemini session is a single JSON object: { sessionId, startTime, messages[] }.
@@ -33,7 +33,7 @@ function geminiToolResult(result: unknown): { text: string; success: boolean } {
   return { text: parts.join("\n"), success };
 }
 
-/** Convert a parsed Gemini CLI session object into one OpenTrajectory document. */
+/** Convert a parsed Antigravity CLI session object into one OpenTrajectory document. */
 export function fromGemini(session: Record<string, any>, opts: { trajectoryId?: string } = {}): Trajectory {
   const messages: RawMsg[] = Array.isArray(session?.messages) ? session.messages : [];
   const steps: Step[] = [];
@@ -101,7 +101,7 @@ export function fromGemini(session: Record<string, any>, opts: { trajectoryId?: 
   return {
     ot_version: OT_VERSION,
     trajectory_id: opts.trajectoryId || session?.sessionId || "gemini-trajectory",
-    harness: { name: "gemini-cli" },
+    harness: { name: "antigravity" },
     task: firstUser ? { description: firstUser.slice(0, 500) } : undefined,
     model: undefined,
     started_at: session?.startTime,
@@ -118,7 +118,7 @@ export function captureFromGeminiSession(json: string, opts?: { trajectoryId?: s
   return fromGemini(JSON.parse(json), opts);
 }
 
-/** Heuristic: does this text look like a Gemini CLI session (single JSON object)? */
+/** Heuristic: does this text look like a Antigravity CLI session (single JSON object)? */
 export function looksLikeGemini(text: string): boolean {
   const t = text.trimStart();
   if (!t.startsWith("{")) return false;

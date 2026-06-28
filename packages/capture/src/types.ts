@@ -4,7 +4,7 @@
 export const OT_VERSION = "0.1";
 
 export interface Harness {
-  name: string; // claude-code | codex-cli | gemini-cli | langgraph | ...
+  name: string; // claude-code | codex-cli | antigravity | langgraph | ...
   version?: string;
 }
 

@@ -5,7 +5,7 @@ open, browsable face of the standard. Open `registry/index.html` in any browser;
 server and no build to view.
 
 ## What it shows
-- **Harness adapters** — the four that emit OpenTrajectory today (Claude Code, Codex CLI, Gemini
+- **Harness adapters** — the four that emit OpenTrajectory today (Claude Code, Codex CLI, Antigravity
   CLI verified first-hand; LangGraph/LangSmith provisional), each with its native shape + source.
 - **Conformance corpus** — all nine canonical cases from [`../conformance/`](../conformance/),
   expandable to read the JSON and the invariants each one is held to.

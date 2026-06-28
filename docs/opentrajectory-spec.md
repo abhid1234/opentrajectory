@@ -33,7 +33,7 @@ Every field below is traced to something a real harness emits — see `harness-e
   "ot_version": "0.1",            // REQUIRED. spec version string.
   "trajectory_id": "string",      // REQUIRED. unique id for this run.
   "harness": {                    // REQUIRED. what produced this trajectory.
-    "name": "claude-code",        //   e.g. claude-code | codex-cli | gemini-cli | langgraph
+    "name": "claude-code",        //   e.g. claude-code | codex-cli | antigravity | langgraph
     "version": "2.x.x"            //   OPTIONAL.
   },
   "task": {                       // OPTIONAL but recommended.

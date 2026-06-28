@@ -154,7 +154,7 @@ ok("does not misdetect claude transcript", looksLikeCodex(transcript) === false)
 const cxMsgs = toMessages(cx);
 ok("codex -> messages round-trips", cxMsgs.messages.some((m) => m.tool_calls?.[0]?.function.name === "shell_command"));
 
-// --- 6b2. Gemini CLI adapter -------------------------------------------------
+// --- 6b2. Antigravity CLI adapter -------------------------------------------------
 console.log("from-gemini");
 const gSession = JSON.stringify({
   sessionId: "gx1", startTime: "2026-06-22T00:00:00Z", lastUpdated: "2026-06-22T00:00:05Z",
@@ -169,7 +169,7 @@ const gSession = JSON.stringify({
 });
 const gx = captureFromGeminiSession(gSession);
 ok("gemini output is conformant", validate(gx).valid, JSON.stringify(validate(gx).errors));
-ok("harness is gemini-cli", gx.harness.name === "gemini-cli");
+ok("harness is antigravity", gx.harness.name === "antigravity");
 ok("skipped info message", !gx.steps.some((s) => JSON.stringify(s).includes("ui notice")));
 ok("captured read_file tool", gx.steps.some((s) => s.tool_call?.name === "read_file"));
 ok("extracted functionResponse output", gx.steps.find((s) => s.tool_call?.name === "read_file")?.tool_call?.result?.includes("export const x"));

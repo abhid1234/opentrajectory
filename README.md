@@ -2,7 +2,7 @@
 
 **An open, vendor-neutral format for AI agent trajectories — plus a zero-dependency capture SDK and the reference Inspector that reads and scores it.**
 
-Every agent harness (Claude Code, Codex CLI, Gemini/Antigravity, LangGraph) already records the same spine of a run — ordered steps, tool calls (name / args / result / success), decisions, outcome — but in four mutually incompatible vocabularies, none designed for evaluation. OpenTrajectory is the one **portable file** they can all emit, and the Inspector is the validated reader that tells you *why* a run succeeded or failed.
+Every agent harness (Claude Code, Codex CLI, Antigravity, LangGraph) already records the same spine of a run — ordered steps, tool calls (name / args / result / success), decisions, outcome — but in four mutually incompatible vocabularies, none designed for evaluation. OpenTrajectory is the one **portable file** they can all emit, and the Inspector is the validated reader that tells you *why* a run succeeded or failed.
 
 OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge needs (per-step `success`, a top-level `outcome`, an evaluator-filled `verdict`). It is designed to be [OpenTelemetry-GenAI-mappable](docs/opentrajectory-spec.md#appendix-a--opentelemetry-genai-mapping-compatibility-not-competition), not to compete with observability plumbing.
 
@@ -16,13 +16,13 @@ OpenTrajectory is **eval-first**, not telemetry: it captures the fields a judge 
 | **Registry** (static, zero-dep hub over the adapters + corpus; generated from the corpus, drift-guarded) | [`registry/`](registry/) | ✅ v2 seed |
 | **OpenTelemetry bridge** (`.ot.json` → OTLP/JSON GenAI spans) | [`packages/capture/src/to-otel.ts`](packages/capture/src/to-otel.ts) | ✅ |
 | **Harness-emit research + go/no-go** | [`docs/harness-emit-analysis.md`](docs/harness-emit-analysis.md) | ✅ |
-| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Gemini + LangGraph** adapters + live hook; LangGraph real-export validated, single-LLM) | [`packages/capture/`](packages/capture/) | ✅ 118 tests |
+| **Capture SDK + CLI** (zero-dep TS, **Claude Code + Codex + Antigravity + LangGraph** adapters + live hook; LangGraph real-export validated, single-LLM) | [`packages/capture/`](packages/capture/) | ✅ 118 tests |
 | **Reference judge** (zero-dep TS, fills `outcome.verdict` via Gemini) + **offline heuristic** | [`packages/capture/src/judge.ts`](packages/capture/src/judge.ts) · [`heuristic.ts`](packages/capture/src/heuristic.ts) | ✅ |
 | **Judge benchmark** (24-case set; surfaced a judge bias → drove a prompt fix) | [`bench/`](bench/) | ✅ heuristic 18/24 · judge 17→24/24 (in-sample) |
 | **Inspector reads the native format + verdict** (3 harnesses side by side) | [`inspector/`](inspector/) | ✅ 15 tests |
 | **Wedge demo** (recorded ~20s cast) **+ self-improvement loop demo** | [`demo/wedge.cast`](demo/wedge.cast) · [`demo/`](demo/) · [`demo/loop/`](demo/loop/) | ✅ |
 
-v1 ships **four capture adapters**: Claude Code, Codex CLI, and Gemini CLI — all verified first-hand against real on-disk sessions — plus **LangGraph/LangSmith**, validated against **real serialized LangSmith exports** (the SDK's `wrap_openai` test data, vendored at [`test/fixtures/langsmith/`](packages/capture/test/fixtures/langsmith/); real single-LLM runs confirmed end-to-end, a real multi-tool agent trace still synthetic-only). All read into one format the same Inspector audits (the cross-harness proof). A [conformance corpus](conformance/) + a static [registry](registry/) (generated from that corpus) are the seed of the community hub; a hosted version is next. The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
+v1 ships **four capture adapters**: Claude Code, Codex CLI, and Antigravity CLI — all verified first-hand against real on-disk sessions — plus **LangGraph/LangSmith**, validated against **real serialized LangSmith exports** (the SDK's `wrap_openai` test data, vendored at [`test/fixtures/langsmith/`](packages/capture/test/fixtures/langsmith/); real single-LLM runs confirmed end-to-end, a real multi-tool agent trace still synthetic-only). All read into one format the same Inspector audits (the cross-harness proof). A [conformance corpus](conformance/) + a static [registry](registry/) (generated from that corpus) are the seed of the community hub; a hosted version is next. The retraining loop is explicitly **out of scope** — that's the funded incumbents' lane (see the analysis).
 
 ## Quick start
 
@@ -97,7 +97,7 @@ published schema never drift. This repo dogfoods both on every push
 ## CLI
 
 ```
-ot capture <file> [-o out] [--id ID] [--harness H]         capture from Claude Code / Codex / Gemini / LangGraph (auto-detected)
+ot capture <file> [-o out] [--id ID] [--harness H]         capture from Claude Code / Codex / Antigravity / LangGraph (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages
 ot to-otel <file.ot.json> [-o out.json]                     convert to OpenTelemetry GenAI spans (OTLP/JSON)

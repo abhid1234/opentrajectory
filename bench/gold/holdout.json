@@ -22,7 +22,7 @@
     "metadata": { "ground_truth": { "diagnosis": "PRODUCT", "rationale": "Genuine wrong type choice; no env block, no cheating." } }
   },
   {
-    "ot_version": "0.1", "trajectory_id": "h03-product-pagination-last", "harness": { "name": "gemini-cli" },
+    "ot_version": "0.1", "trajectory_id": "h03-product-pagination-last", "harness": { "name": "antigravity" },
     "task": { "description": "Fix paginate() to include the final partial page." },
     "steps": [
       { "index": 0, "role": "user", "message": { "text": "Fix paginate() to include the final partial page." } },
@@ -107,7 +107,7 @@
     "metadata": { "ground_truth": { "diagnosis": "HARNESS", "rationale": "The database service isn't running in the environment — infra gap, not model or reward." } }
   },
   {
-    "ot_version": "0.1", "trajectory_id": "h11-clean-validation", "harness": { "name": "gemini-cli" },
+    "ot_version": "0.1", "trajectory_id": "h11-clean-validation", "harness": { "name": "antigravity" },
     "task": { "description": "Reject negative quantities in addToCart." },
     "steps": [
       { "index": 0, "role": "user", "message": { "text": "Reject negative quantities in addToCart." } },

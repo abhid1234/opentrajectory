@@ -18,7 +18,7 @@ these shapes, and make `ot validate` pass on your output.** When it does, you co
 | [`05-verdict.ot.json`](05-verdict.ot.json) | An evaluator-filled `outcome.verdict` — the eval-first field telemetry formats lack. |
 | [`harness-claude-code.ot.json`](harness-claude-code.ot.json) | Claude Code native shape normalized (`tool_use`/`tool_result`, `toolu_*` ids). |
 | [`harness-codex-cli.ot.json`](harness-codex-cli.ot.json) | Codex CLI native shape normalized (`function_call`/`function_call_output`, `call_id`). |
-| [`harness-gemini-cli.ot.json`](harness-gemini-cli.ot.json) | Gemini CLI native shape normalized (typed log items, `run_shell_command`, token usage). |
+| [`harness-antigravity.ot.json`](harness-antigravity.ot.json) | Antigravity CLI native shape normalized (typed log items, `run_shell_command`, token usage). |
 | [`harness-langgraph.ot.json`](harness-langgraph.ot.json) | LangGraph/LangSmith run tree normalized (nested runs by `run_type`). **Provisional** — documented schema, not a validated real export. |
 
 ## Validate against it

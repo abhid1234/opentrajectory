@@ -1,5 +1,5 @@
 import type { Trajectory } from "./types.js";
-/** Convert a parsed Gemini CLI session object into one OpenTrajectory document. */
+/** Convert a parsed Antigravity CLI session object into one OpenTrajectory document. */
 export declare function fromGemini(session: Record<string, any>, opts?: {
     trajectoryId?: string;
 }): Trajectory;
@@ -7,5 +7,5 @@ export declare function fromGemini(session: Record<string, any>, opts?: {
 export declare function captureFromGeminiSession(json: string, opts?: {
     trajectoryId?: string;
 }): Trajectory;
-/** Heuristic: does this text look like a Gemini CLI session (single JSON object)? */
+/** Heuristic: does this text look like a Antigravity CLI session (single JSON object)? */
 export declare function looksLikeGemini(text: string): boolean;

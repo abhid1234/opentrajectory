@@ -17,8 +17,8 @@ window.__REGISTRY__ = {
       "source": "packages/capture/src/from-codex.ts"
     },
     {
-      "name": "gemini-cli",
-      "label": "Gemini CLI",
+      "name": "antigravity",
+      "label": "Antigravity CLI",
       "status": "verified",
       "native": "typed log items, run_shell_command",
       "source": "packages/capture/src/from-gemini.ts"
@@ -127,17 +127,17 @@ window.__REGISTRY__ = {
       "json": "{\n  \"ot_version\": \"0.1\",\n  \"trajectory_id\": \"conformance-harness-codex-cli\",\n  \"harness\": {\n    \"name\": \"codex-cli\",\n    \"version\": \"0.80.0\"\n  },\n  \"task\": {\n    \"description\": \"Run a build (Codex shape: function_call / function_call_output, call_id, shell_command).\"\n  },\n  \"steps\": [\n    {\n      \"index\": 0,\n      \"role\": \"user\",\n      \"message\": {\n        \"text\": \"Fix the failing build.\"\n      }\n    },\n    {\n      \"index\": 1,\n      \"role\": \"assistant\",\n      \"tool_call\": {\n        \"id\": \"call_1\",\n        \"name\": \"shell_command\",\n        \"args\": {\n          \"command\": \"make\"\n        },\n        \"result\": \"make: Nothing to be done for 'all'.\",\n        \"success\": true\n      }\n    }\n  ],\n  \"outcome\": {\n    \"status\": \"success\",\n    \"resolved\": true\n  }\n}"
     },
     {
-      "file": "harness-gemini-cli.ot.json",
-      "demonstrates": "Gemini CLI native shape normalized: typed log items, run_shell_command, token usage.",
+      "file": "harness-antigravity.ot.json",
+      "demonstrates": "Antigravity CLI native shape normalized: typed log items, run_shell_command, token usage.",
       "must": [
-        "harness:gemini-cli",
+        "harness:antigravity",
         "has-tool"
       ],
-      "harness": "gemini-cli",
+      "harness": "antigravity",
       "steps": 2,
       "status": "success",
       "verdict": null,
-      "json": "{\n  \"ot_version\": \"0.1\",\n  \"trajectory_id\": \"conformance-harness-gemini-cli\",\n  \"harness\": {\n    \"name\": \"gemini-cli\",\n    \"version\": \"0.x\"\n  },\n  \"task\": {\n    \"description\": \"Run a shell command (Gemini CLI shape: typed log items, run_shell_command, token usage).\"\n  },\n  \"model\": \"gemini-2.5-pro\",\n  \"steps\": [\n    {\n      \"index\": 0,\n      \"role\": \"user\",\n      \"message\": {\n        \"text\": \"Read config.ts and run the tests.\"\n      }\n    },\n    {\n      \"index\": 1,\n      \"role\": \"assistant\",\n      \"tool_call\": {\n        \"id\": \"g1\",\n        \"name\": \"run_shell_command\",\n        \"args\": {\n          \"command\": \"npm test\"\n        },\n        \"result\": \"Tests: 12 passed, 12 total\",\n        \"success\": true\n      }\n    }\n  ],\n  \"outcome\": {\n    \"status\": \"success\",\n    \"resolved\": true\n  },\n  \"cost\": {\n    \"input_tokens\": 150,\n    \"output_tokens\": 30\n  }\n}"
+      "json": "{\n  \"ot_version\": \"0.1\",\n  \"trajectory_id\": \"conformance-harness-antigravity\",\n  \"harness\": {\n    \"name\": \"antigravity\",\n    \"version\": \"0.x\"\n  },\n  \"task\": {\n    \"description\": \"Run a shell command (Antigravity CLI shape: typed log items, run_shell_command, token usage).\"\n  },\n  \"model\": \"gemini-2.5-pro\",\n  \"steps\": [\n    {\n      \"index\": 0,\n      \"role\": \"user\",\n      \"message\": {\n        \"text\": \"Read config.ts and run the tests.\"\n      }\n    },\n    {\n      \"index\": 1,\n      \"role\": \"assistant\",\n      \"tool_call\": {\n        \"id\": \"g1\",\n        \"name\": \"run_shell_command\",\n        \"args\": {\n          \"command\": \"npm test\"\n        },\n        \"result\": \"Tests: 12 passed, 12 total\",\n        \"success\": true\n      }\n    }\n  ],\n  \"outcome\": {\n    \"status\": \"success\",\n    \"resolved\": true\n  },\n  \"cost\": {\n    \"input_tokens\": 150,\n    \"output_tokens\": 30\n  }\n}"
     },
     {
       "file": "harness-langgraph.ot.json",

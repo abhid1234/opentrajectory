@@ -182,9 +182,9 @@
   },
   {
     "ot_version": "0.1",
-    "trajectory_id": "demo-gemini-cli-product",
+    "trajectory_id": "demo-antigravity-product",
     "harness": {
-      "name": "gemini-cli"
+      "name": "antigravity"
     },
     "task": {
       "task_id": "fix-pagination",
@@ -261,7 +261,7 @@
       }
     },
     "metadata": {
-      "note": "Captured via @opentrajectory/capture from a Gemini CLI session (illustrative demo fixture). No env error, no gamed reward — a genuine logic gap (PRODUCT)."
+      "note": "Captured via @opentrajectory/capture from a Antigravity CLI session (illustrative demo fixture). No env error, no gamed reward — a genuine logic gap (PRODUCT)."
     }
   },
   {
@@ -720,9 +720,9 @@
   },
   {
     "ot_version": "0.1",
-    "trajectory_id": "demo-gemini-clean-rename",
+    "trajectory_id": "demo-antigravity-clean-rename",
     "harness": {
-      "name": "gemini-cli"
+      "name": "antigravity"
     },
     "task": {
       "task_id": "rename-symbol",
@@ -1100,9 +1100,9 @@
   },
   {
     "ot_version": "0.1",
-    "trajectory_id": "demo-gemini-product-tax",
+    "trajectory_id": "demo-antigravity-product-tax",
     "harness": {
-      "name": "gemini-cli"
+      "name": "antigravity"
     },
     "task": {
       "task_id": "cart-tax",
@@ -1344,9 +1344,9 @@
   },
   {
     "ot_version": "0.1",
-    "trajectory_id": "demo-gemini-training-snapshot",
+    "trajectory_id": "demo-antigravity-training-snapshot",
     "harness": {
-      "name": "gemini-cli"
+      "name": "antigravity"
     },
     "task": {
       "task_id": "fix-snapshot",

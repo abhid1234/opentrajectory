@@ -11,7 +11,7 @@ npm i -D @opentrajectory/capture
 ## CLI (`ot`)
 
 ```
-ot capture <file> [-o out] [--harness claude-code|codex|gemini]   capture a run (auto-detected)
+ot capture <file> [-o out] [--harness claude-code|codex|antigravity]   capture a run (auto-detected)
 ot validate <file.ot.json|.ot.jsonl>                              conformance check (spec §7)
 ot diagnose <file.ot.json>                                        offline heuristic diagnosis (no key)
 ot judge <file.ot.json> [--dry-run]                               fill outcome.verdict via Gemini
@@ -26,7 +26,7 @@ npx ot capture ~/.claude/projects/<slug>/<session>.jsonl -o run.ot.json
 npx ot diagnose run.ot.json
 ```
 
-Capture adapters are verified first-hand against real on-disk sessions for **Claude Code**, **Codex CLI**, and **Gemini CLI**; `ot capture` auto-detects which.
+Capture adapters are verified first-hand against real on-disk sessions for **Claude Code**, **Codex CLI**, and **Antigravity CLI**; `ot capture` auto-detects which.
 
 ## SDK
 

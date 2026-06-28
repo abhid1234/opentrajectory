@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // OpenTrajectory capture CLI. Zero runtime dependencies (node built-ins only).
 //
-//   ot capture <file> [-o out] [--id ID] [--harness H]         capture from Claude Code / Codex / Gemini (auto-detected)
+//   ot capture <file> [-o out] [--id ID] [--harness H]         capture from Claude Code / Codex / Antigravity (auto-detected)
 //   ot validate <file.ot.json|.ot.jsonl>                        conformance check (spec §7)
 //   ot to-messages <file.ot.json> [-o out.json]                 convert to OpenAI-style messages (Inspector input)
 //   ot to-otel <file.ot.json> [-o out.json]                     convert to OpenTelemetry GenAI spans (OTLP/JSON)
@@ -52,17 +52,17 @@ function main(): void {
 
   if (cmd === "capture") {
     const input = rest.find((a) => !a.startsWith("-"));
-    if (!input) return fail("usage: ot capture <file> [-o out.ot.json] [--id ID] [--harness claude-code|codex|gemini|langgraph]");
+    if (!input) return fail("usage: ot capture <file> [-o out.ot.json] [--id ID] [--harness claude-code|codex|antigravity|langgraph]");
     const text = readFileSync(input, "utf8");
     const id = arg(["--id"], rest);
     const forced = arg(["--harness"], rest);
     const harness =
       forced ||
-      (looksLikeLangGraph(text) ? "langgraph" : looksLikeGemini(text) ? "gemini" : looksLikeCodex(text) ? "codex" : "claude-code");
+      (looksLikeLangGraph(text) ? "langgraph" : looksLikeGemini(text) ? "antigravity" : looksLikeCodex(text) ? "codex" : "claude-code");
     const traj =
       harness === "langgraph"
         ? captureFromLangGraph(text, { trajectoryId: id })
-        : harness === "gemini" || harness === "gemini-cli"
+        : harness === "antigravity" || harness === "gemini"
           ? captureFromGeminiSession(text, { trajectoryId: id })
           : harness === "codex" || harness === "codex-cli"
             ? captureFromRollout(text, { trajectoryId: id })

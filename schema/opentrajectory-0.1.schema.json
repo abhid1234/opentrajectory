@@ -13,7 +13,7 @@
       "type": "object",
       "required": ["name"],
       "properties": {
-        "name": { "type": "string", "description": "e.g. claude-code | codex-cli | gemini-cli | langgraph" },
+        "name": { "type": "string", "description": "e.g. claude-code | codex-cli | antigravity | langgraph" },
         "version": { "type": "string" }
       }
     },
